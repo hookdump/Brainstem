@@ -13,19 +13,27 @@ shared memory service.
 
 ## Quick start
 
-1. Start Brainstem API:
+1. Install Brainstem (from repo root):
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+```
+
+2. Start Brainstem API:
 
 ```bash
 brainstem serve-api
 ```
 
-2. Run the REST demo:
+3. Run the REST demo:
 
 ```bash
 python demo/rest_context_showcase/run_demo.py
 ```
 
-3. Run the coding-agent quickstart:
+4. Run the coding-agent quickstart:
 
 ```bash
 bash demo/agent_quickstart/scripts/run_quickstart.sh
