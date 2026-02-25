@@ -9,7 +9,7 @@ Status date: February 25, 2026
 - [x] Add initial tests and CI baseline.
 - [ ] Replace in-memory store with PostgreSQL + pgvector backend. (`#1`)
 - [x] Add authn/authz middleware for tenant and scope enforcement. (`#2`)
-- [ ] Add retrieval metrics and tracing instrumentation. (`#5`)
+- [ ] Add retrieval metrics and tracing instrumentation. (`#5`, request metrics baseline done)
 
 ## Next (High Priority)
 
@@ -43,3 +43,4 @@ Status date: February 25, 2026
 - [x] Closed GitHub issue `#2` (auth middleware complete for v0).
 - [x] Added TTL-aware retrieval and contradiction signaling in recall.
 - [x] Added new backlog issues for retention cleanup and MCP transport (`#7`, `#8`).
+- [x] Added observability baseline (`/v0/metrics` counters + latency summaries) with tests.

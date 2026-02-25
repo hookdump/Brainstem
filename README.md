@@ -23,6 +23,9 @@ It lets multiple agents store, retrieve, and reuse context across sessions with:
   - heuristic salience/confidence
   - contradiction signaling in recall output
   - retention support with `expires_at`
+- Observability baseline:
+  - per-route request counters and latency summaries
+  - `GET /v0/metrics` endpoint
 - Tooling:
   - migration script for SQLite
   - retrieval benchmark harness (Recall@K, nDCG, token estimate)
@@ -86,6 +89,7 @@ brainstem-api
 
 - `GET /healthz`
 - `GET /v0/meta`
+- `GET /v0/metrics`
 - `POST /v0/memory/remember`
 - `POST /v0/memory/recall`
 - `GET /v0/memory/{memory_id}?tenant_id=...&agent_id=...&scope=...`
