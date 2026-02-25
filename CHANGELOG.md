@@ -3,6 +3,17 @@
 ## 0.3.0 - 2026-02-25
 
 ### Changes
+- Merge pull request #55 from hookdump/chore/release-0.3.0-prep
+- chore: prepare release artifacts for v0.3.0
+- Merge pull request #54 from hookdump/feat/53-context-compaction
+- feat: add context compaction API and MCP workflow
+- Merge pull request #52 from hookdump/feat/51-mypy-hardening
+- fix: ignore optional MCP imports in strict mypy
+- feat: enforce strict mypy gate across repo
+
+## 0.3.0 - 2026-02-25
+
+### Changes
 - Merge pull request #54 from hookdump/feat/53-context-compaction
 - feat: add context compaction API and MCP workflow
 - Merge pull request #52 from hookdump/feat/51-mypy-hardening
