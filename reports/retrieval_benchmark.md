@@ -1,17 +1,26 @@
 # Brainstem Retrieval Benchmark Report
 
-Generated: 2026-02-25T06:26:31.152010+00:00
+Generated: 2026-02-25T07:33:27.197406+00:00
 Dataset: `benchmarks/retrieval_dataset.json`
 Cutoff K: `5`
 
 ## Summary
 
-| Backend | Recall@K | nDCG@K | Avg Composed Tokens |
-| --- | ---: | ---: | ---: |
-| inmemory | 1.000 | 0.882 | 48.9 |
-| sqlite | 1.000 | 0.882 | 48.9 |
+| Backend | Graph Mode | Recall@K | nDCG@K | Avg Composed Tokens |
+| --- | --- | ---: | ---: | ---: |
+| inmemory | off | 1.000 | 0.882 | 48.9 |
+| inmemory | on | 1.000 | 0.882 | 48.9 |
+| sqlite | off | 1.000 | 0.870 | 50.0 |
+| sqlite | on | 0.900 | 0.502 | 50.1 |
 
-## Case-level Results (inmemory)
+## Graph Impact
+
+| Backend | Recall Delta | nDCG Delta | Avg Tokens Delta |
+| --- | ---: | ---: | ---: |
+| inmemory | +0.000 | +0.000 | +0.0 |
+| sqlite | -0.100 | -0.368 | +0.1 |
+
+## Case-level Results (inmemory, graph on)
 
 | Case | Recall | nDCG | Tokens |
 | --- | ---: | ---: | ---: |

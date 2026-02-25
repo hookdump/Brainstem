@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, TypedDict
 
 from brainstem.eval import EvalCase, run_retrieval_eval_detailed
+from brainstem.graph import GraphAugmentedRepository, InMemoryGraphStore, SQLiteGraphStore
 from brainstem.models import RememberRequest
 from brainstem.store import InMemoryRepository, MemoryRepository, SQLiteRepository
 
@@ -60,9 +61,16 @@ def run_benchmark(
     backend: str = "inmemory",
     sqlite_path: str = ".data/benchmark.db",
     k: int = 5,
+    graph_enabled: bool = False,
+    graph_max_expansion: int = 4,
 ) -> dict[str, Any]:
     dataset = load_benchmark_dataset(dataset_path)
     repository = _build_repository(backend=backend, sqlite_path=sqlite_path)
+    graph_store: InMemoryGraphStore | SQLiteGraphStore | None = None
+    if graph_enabled:
+        graph_store = (
+            InMemoryGraphStore() if backend == "inmemory" else SQLiteGraphStore(sqlite_path)
+        )
 
     tenant_id = dataset["tenant_id"]
     agent_id = dataset["agent_id"]
@@ -86,6 +94,12 @@ def run_benchmark(
             )
         )
         seed_memory_ids[seed["id"]] = response.memory_ids[0]
+        if graph_store is not None:
+            graph_store.project_memory(
+                tenant_id=tenant_id,
+                memory_id=response.memory_ids[0],
+                text=seed["text"],
+            )
 
     eval_cases: list[EvalCase] = []
     for case in dataset["cases"]:
@@ -98,8 +112,17 @@ def run_benchmark(
             )
         )
 
+    eval_repository = (
+        GraphAugmentedRepository(
+            repository=repository,
+            graph_store=graph_store,
+            max_expansion=graph_max_expansion,
+        )
+        if graph_store is not None
+        else repository
+    )
     metrics, case_results = run_retrieval_eval_detailed(
-        repository=repository,
+        repository=eval_repository,
         tenant_id=tenant_id,
         agent_id=agent_id,
         cases=eval_cases,
@@ -109,10 +132,14 @@ def run_benchmark(
     close = getattr(repository, "close", None)
     if callable(close):
         close()
+    graph_close = getattr(graph_store, "close", None)
+    if callable(graph_close):
+        graph_close()
 
     return {
         "backend": backend,
         "k": k,
+        "graph_enabled": graph_enabled,
         "dataset_path": dataset_path,
         "seed_count": len(dataset["seeds"]),
         "case_count": len(dataset["cases"]),

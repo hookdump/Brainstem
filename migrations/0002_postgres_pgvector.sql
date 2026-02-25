@@ -32,3 +32,27 @@ CREATE TABLE IF NOT EXISTS idempotency_records (
     created_at TIMESTAMPTZ NOT NULL,
     PRIMARY KEY (tenant_id, idempotency_key)
 );
+
+CREATE TABLE IF NOT EXISTS graph_terms (
+    tenant_id TEXT NOT NULL,
+    term TEXT NOT NULL,
+    memory_id TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL,
+    PRIMARY KEY (tenant_id, term, memory_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_graph_terms_tenant_term
+    ON graph_terms (tenant_id, term);
+
+CREATE TABLE IF NOT EXISTS graph_edges (
+    tenant_id TEXT NOT NULL,
+    src_memory_id TEXT NOT NULL,
+    dst_memory_id TEXT NOT NULL,
+    relation TEXT NOT NULL,
+    weight DOUBLE PRECISION NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL,
+    PRIMARY KEY (tenant_id, src_memory_id, dst_memory_id, relation)
+);
+
+CREATE INDEX IF NOT EXISTS idx_graph_edges_tenant_src
+    ON graph_edges (tenant_id, src_memory_id);

@@ -16,6 +16,8 @@ class Settings:
     job_backend: str
     job_sqlite_path: str
     job_worker_enabled: bool
+    graph_enabled: bool
+    graph_max_expansion: int
 
 
 def _env_bool(name: str, default: bool) -> bool:
@@ -40,4 +42,6 @@ def load_settings() -> Settings:
         job_backend=os.getenv("BRAINSTEM_JOB_BACKEND", "inprocess").lower(),
         job_sqlite_path=os.getenv("BRAINSTEM_JOB_SQLITE_PATH", ".data/jobs.db"),
         job_worker_enabled=_env_bool("BRAINSTEM_JOB_WORKER_ENABLED", True),
+        graph_enabled=_env_bool("BRAINSTEM_GRAPH_ENABLED", False),
+        graph_max_expansion=max(0, int(os.getenv("BRAINSTEM_GRAPH_MAX_EXPANSION", "4"))),
     )

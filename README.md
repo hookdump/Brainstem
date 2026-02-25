@@ -141,6 +141,11 @@ Brainstem reads runtime config from environment variables:
 - `BRAINSTEM_JOB_WORKER_ENABLED`:
   - `true` (default) runs embedded worker in API process
   - `false` enqueues only; use external worker process
+- `BRAINSTEM_GRAPH_ENABLED`:
+  - `false` (default)
+  - `true` enables relation graph projection + recall expansion
+- `BRAINSTEM_GRAPH_MAX_EXPANSION`:
+  - max extra graph-related memories appended during recall (default `4`)
 
 Example:
 
@@ -382,6 +387,7 @@ Run retrieval benchmark:
 ```bash
 brainstem benchmark --backend inmemory --k 5
 brainstem benchmark --backend sqlite --sqlite-path .data/benchmark.db --k 5
+brainstem benchmark --backend sqlite --graph-enabled --graph-max-expansion 4 --k 5
 ```
 
 Generate a markdown benchmark artifact:
@@ -404,6 +410,13 @@ brainstem leaderboard \
 
 CI generates the same leaderboard outputs on each run and uploads them as the
 `benchmark-leaderboard` workflow artifact.
+
+### When to enable graph mode
+
+Enable graph mode when memory entries share entities/terms and you want recall
+to include relation-adjacent context (for example runbooks, policies, and
+incident artifacts that reference the same system names). Keep it disabled for
+minimal-latency deployments where strict lexical/vector ranking is sufficient.
 
 Run HTTP health check:
 

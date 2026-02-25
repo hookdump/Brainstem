@@ -36,6 +36,8 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark.add_argument("--sqlite-path", default=".data/benchmark.db")
     benchmark.add_argument("--k", type=int, default=5)
     benchmark.add_argument("--output-json", default="")
+    benchmark.add_argument("--graph-enabled", action="store_true")
+    benchmark.add_argument("--graph-max-expansion", type=int, default=4)
 
     report = subparsers.add_parser("report", help="Generate benchmark markdown report")
     report.add_argument("--dataset", default="benchmarks/retrieval_dataset.json")
@@ -81,6 +83,8 @@ def main(argv: list[str] | None = None) -> int:
             backend=args.backend,
             sqlite_path=args.sqlite_path,
             k=args.k,
+            graph_enabled=args.graph_enabled,
+            graph_max_expansion=args.graph_max_expansion,
         )
         if args.output_json:
             output = Path(args.output_json)
