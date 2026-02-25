@@ -34,6 +34,7 @@ Status date: February 25, 2026
 - [x] Add canary model registry for reranker/salience models. (`#28`)
 - [x] Add optional graph projection for relation-aware retrieval. (`#29`)
 - [x] Publish reproducible benchmark suite and leaderboard examples. (`#30`)
+- [x] Persist model registry state with audit history. (`#35`)
 
 ## Done
 
@@ -66,3 +67,4 @@ Status date: February 25, 2026
 - [x] Added benchmark suite manifest + leaderboard generation with CI artifacts.
 - [x] Added canary model registry endpoints with rollout/promotion/rollback and signals.
 - [x] Added optional graph projection + graph-assisted recall expansion across backends.
+- [x] Added persistent model registry backends and model audit history API.

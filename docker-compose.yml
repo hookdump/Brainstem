@@ -38,6 +38,8 @@ services:
       BRAINSTEM_JOB_BACKEND: sqlite
       BRAINSTEM_JOB_SQLITE_PATH: /var/lib/brainstem/jobs.db
       BRAINSTEM_JOB_WORKER_ENABLED: "false"
+      BRAINSTEM_MODEL_REGISTRY_BACKEND: sqlite
+      BRAINSTEM_MODEL_REGISTRY_SQLITE_PATH: /var/lib/brainstem/model_registry.db
     volumes:
       - brainstem_jobdata:/var/lib/brainstem
     ports:
@@ -62,6 +64,8 @@ services:
       BRAINSTEM_POSTGRES_DSN: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-brainstem}
       BRAINSTEM_JOB_BACKEND: sqlite
       BRAINSTEM_JOB_SQLITE_PATH: /var/lib/brainstem/jobs.db
+      BRAINSTEM_MODEL_REGISTRY_BACKEND: sqlite
+      BRAINSTEM_MODEL_REGISTRY_SQLITE_PATH: /var/lib/brainstem/model_registry.db
     volumes:
       - brainstem_jobdata:/var/lib/brainstem
 

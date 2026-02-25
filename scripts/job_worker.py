@@ -8,6 +8,12 @@ import signal
 import time
 
 from brainstem.jobs import JobManager
+from brainstem.model_registry import (
+    InMemoryModelRegistryStore,
+    ModelRegistry,
+    PostgresModelRegistryStore,
+    SQLiteModelRegistryStore,
+)
 from brainstem.settings import Settings, load_settings
 from brainstem.store import InMemoryRepository, MemoryRepository, SQLiteRepository
 from brainstem.store_postgres import PostgresRepository
@@ -43,6 +49,32 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def _create_model_registry(settings: Settings) -> ModelRegistry:
+    if settings.model_registry_backend == "inmemory":
+        return ModelRegistry(
+            store=InMemoryModelRegistryStore(),
+            signal_window=settings.model_registry_signal_window,
+        )
+    if settings.model_registry_backend == "sqlite":
+        return ModelRegistry(
+            store=SQLiteModelRegistryStore(settings.model_registry_sqlite_path),
+            signal_window=settings.model_registry_signal_window,
+        )
+    if settings.model_registry_backend == "postgres":
+        if not settings.postgres_dsn:
+            raise ValueError(
+                "BRAINSTEM_POSTGRES_DSN is required when "
+                "BRAINSTEM_MODEL_REGISTRY_BACKEND=postgres"
+            )
+        return ModelRegistry(
+            store=PostgresModelRegistryStore(settings.postgres_dsn),
+            signal_window=settings.model_registry_signal_window,
+        )
+    raise ValueError(
+        f"unsupported BRAINSTEM_MODEL_REGISTRY_BACKEND: {settings.model_registry_backend}"
+    )
+
+
 def main() -> int:
     args = parse_args()
     settings = load_settings()
@@ -51,11 +83,13 @@ def main() -> int:
             "Worker process requires BRAINSTEM_JOB_BACKEND=sqlite for shared queue mode."
         )
 
+    registry = _create_model_registry(settings)
     manager = JobManager(
         repository=_create_repository(settings),
         sqlite_path=settings.job_sqlite_path,
         start_worker=False,
         poll_interval_s=args.poll_interval,
+        model_registry=registry,
     )
 
     stop = {"value": False}
@@ -80,6 +114,7 @@ def main() -> int:
         return 0
     finally:
         manager.close()
+        registry.close()
 
 
 if __name__ == "__main__":

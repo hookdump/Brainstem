@@ -207,3 +207,20 @@ class ModelRegistryStateResponse(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
     signal_summary: dict[str, dict[str, float]] = Field(default_factory=dict)
     updated_at: datetime
+
+
+class ModelRegistryHistoryEntry(BaseModel):
+    kind: Literal["event", "signal"]
+    event_kind: str | None = None
+    actor_agent_id: str | None = None
+    payload: dict[str, Any] | None = None
+    created_at: datetime
+    version: str | None = None
+    metric: str | None = None
+    value: float | None = None
+    source: str | None = None
+
+
+class ModelRegistryHistoryResponse(BaseModel):
+    model_kind: ModelKind
+    items: list[ModelRegistryHistoryEntry]

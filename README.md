@@ -146,6 +146,14 @@ Brainstem reads runtime config from environment variables:
   - `true` enables relation graph projection + recall expansion
 - `BRAINSTEM_GRAPH_MAX_EXPANSION`:
   - max extra graph-related memories appended during recall (default `4`)
+- `BRAINSTEM_MODEL_REGISTRY_BACKEND`:
+  - `inmemory` (default)
+  - `sqlite`
+  - `postgres`
+- `BRAINSTEM_MODEL_REGISTRY_SQLITE_PATH`:
+  - persistent registry SQLite path, default `.data/model_registry.db`
+- `BRAINSTEM_MODEL_REGISTRY_SIGNAL_WINDOW`:
+  - max recent signals used for summary aggregation (default `500`)
 
 Example:
 
@@ -222,6 +230,7 @@ python scripts/job_worker.py --once
 - `GET /v0/jobs/{job_id}?tenant_id=...&agent_id=...`
 - `GET /v0/jobs/dead_letters?tenant_id=...&agent_id=...`
 - `GET /v0/models/{model_kind}?tenant_id=...&agent_id=...`
+- `GET /v0/models/{model_kind}/history?tenant_id=...&agent_id=...`
 - `POST /v0/models/{model_kind}/canary/register`
 - `POST /v0/models/{model_kind}/canary/promote`
 - `POST /v0/models/{model_kind}/canary/rollback`
@@ -362,11 +371,25 @@ curl -s -X POST http://localhost:8080/v0/models/reranker/signals \
   }' | jq
 ```
 
+Read model registry audit history:
+
+```bash
+curl -s "http://localhost:8080/v0/models/reranker/history?tenant_id=t_demo&agent_id=a_admin&limit=50" | jq
+```
+
 Rollout/rollback mechanics:
 1. Tenants in `tenant_allowlist` always route to canary.
 2. Remaining tenants use deterministic tenant hashing against `rollout_percent`.
 3. Promotion moves canary to active and clears rollout controls.
 4. Rollback clears canary slot and keeps current active version unchanged.
+
+Model registry persistence guidance:
+1. Use `BRAINSTEM_MODEL_REGISTRY_BACKEND=sqlite` and back up
+   `BRAINSTEM_MODEL_REGISTRY_SQLITE_PATH` with your regular snapshot process.
+2. For Postgres, set `BRAINSTEM_MODEL_REGISTRY_BACKEND=postgres`; registry data
+   is stored in `model_registry_state`, `model_registry_signal`, and
+   `model_registry_event`.
+3. Restore should include both state and signal/event tables to preserve audit trail.
 
 ## Migrations and benchmark tools
 
