@@ -1,0 +1,114 @@
+{
+  "tenant_id": "bench_tenant",
+  "agent_id": "bench_agent",
+  "seeds": [
+    {
+      "id": "migration_deadline",
+      "type": "fact",
+      "text": "Migration must complete before April planning cycle.",
+      "scope": "team",
+      "trust_level": "trusted_tool"
+    },
+    {
+      "id": "security_policy",
+      "type": "fact",
+      "text": "Security policy requires MFA for all admin actions.",
+      "scope": "team",
+      "trust_level": "trusted_tool"
+    },
+    {
+      "id": "incident_channel",
+      "type": "fact",
+      "text": "Incident channel is #ops-incidents and escalation is 15 minutes.",
+      "scope": "team",
+      "trust_level": "trusted_tool"
+    },
+    {
+      "id": "release_gate",
+      "type": "fact",
+      "text": "Release cannot proceed without passing integration tests.",
+      "scope": "team",
+      "trust_level": "trusted_tool"
+    },
+    {
+      "id": "cost_limit",
+      "type": "fact",
+      "text": "Monthly cloud spend must stay below 20000 USD.",
+      "scope": "team",
+      "trust_level": "trusted_tool"
+    },
+    {
+      "id": "pager_rotation",
+      "type": "fact",
+      "text": "Pager rotation changes every Monday at 09:00 UTC.",
+      "scope": "team",
+      "trust_level": "trusted_tool"
+    },
+    {
+      "id": "db_policy",
+      "type": "policy",
+      "text": "Database backups are required every 6 hours.",
+      "scope": "team",
+      "trust_level": "trusted_tool"
+    },
+    {
+      "id": "customer_sla",
+      "type": "fact",
+      "text": "Enterprise customer SLA target is 99.95 percent uptime.",
+      "scope": "team",
+      "trust_level": "trusted_tool"
+    }
+  ],
+  "cases": [
+    {
+      "name": "deadline_query",
+      "query": "What deadline exists for migration?",
+      "expected_seed_ids": ["migration_deadline"]
+    },
+    {
+      "name": "security_query",
+      "query": "Any mandatory security control for admin actions?",
+      "expected_seed_ids": ["security_policy"]
+    },
+    {
+      "name": "incident_query",
+      "query": "Where do we page incident response and escalation?",
+      "expected_seed_ids": ["incident_channel"]
+    },
+    {
+      "name": "release_query",
+      "query": "What blocks release if tests fail?",
+      "expected_seed_ids": ["release_gate"]
+    },
+    {
+      "name": "cost_query",
+      "query": "What cloud budget limit is set for the month?",
+      "expected_seed_ids": ["cost_limit"]
+    },
+    {
+      "name": "pager_query",
+      "query": "When does pager duty rotation change?",
+      "expected_seed_ids": ["pager_rotation"]
+    },
+    {
+      "name": "backup_query",
+      "query": "How often do we need database backups?",
+      "expected_seed_ids": ["db_policy"]
+    },
+    {
+      "name": "sla_query",
+      "query": "What uptime target do enterprise customers expect?",
+      "expected_seed_ids": ["customer_sla"]
+    },
+    {
+      "name": "composite_release_security",
+      "query": "What release and security requirements are mandatory?",
+      "expected_seed_ids": ["release_gate", "security_policy"]
+    },
+    {
+      "name": "ops_constraints",
+      "query": "Summarize operational constraints on incidents and pager rotation.",
+      "expected_seed_ids": ["incident_channel", "pager_rotation"]
+    }
+  ]
+}

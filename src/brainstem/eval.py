@@ -16,6 +16,16 @@ class EvalCase(TypedDict):
     expected_ids: list[str]
 
 
+class EvalResult(TypedDict):
+    name: str
+    query: str
+    expected_ids: list[str]
+    found_ids: list[str]
+    recall: float
+    ndcg: float
+    composed_tokens: float
+
+
 def recall_at_k(found_ids: list[str], expected_ids: list[str], k: int) -> float:
     top_k = set(found_ids[:k])
     expected = set(expected_ids)
@@ -49,9 +59,27 @@ def run_retrieval_eval(
     cases: list[EvalCase],
     k: int = 5,
 ) -> dict[str, float]:
+    metrics, _ = run_retrieval_eval_detailed(
+        repository=repository,
+        tenant_id=tenant_id,
+        agent_id=agent_id,
+        cases=cases,
+        k=k,
+    )
+    return metrics
+
+
+def run_retrieval_eval_detailed(
+    repository: MemoryRepository,
+    tenant_id: str,
+    agent_id: str,
+    cases: list[EvalCase],
+    k: int = 5,
+) -> tuple[dict[str, float], list[EvalResult]]:
     recalls: list[float] = []
     ndcgs: list[float] = []
     tokens: list[float] = []
+    results: list[EvalResult] = []
 
     for case in cases:
         response = repository.recall(
@@ -66,13 +94,28 @@ def run_retrieval_eval(
             )
         )
         found_ids = [item.memory_id for item in response.items]
-        recalls.append(recall_at_k(found_ids, case["expected_ids"], k))
-        ndcgs.append(ndcg_at_k(found_ids, case["expected_ids"], k))
-        tokens.append(float(response.composed_tokens_estimate))
+        case_recall = recall_at_k(found_ids, case["expected_ids"], k)
+        case_ndcg = ndcg_at_k(found_ids, case["expected_ids"], k)
+        case_tokens = float(response.composed_tokens_estimate)
+        recalls.append(case_recall)
+        ndcgs.append(case_ndcg)
+        tokens.append(case_tokens)
+        results.append(
+            EvalResult(
+                name=case["name"],
+                query=case["query"],
+                expected_ids=case["expected_ids"],
+                found_ids=found_ids,
+                recall=case_recall,
+                ndcg=case_ndcg,
+                composed_tokens=case_tokens,
+            )
+        )
 
-    return {
+    metrics = {
         "cases": float(len(cases)),
         f"recall@{k}": mean(recalls) if recalls else 0.0,
         f"ndcg@{k}": mean(ndcgs) if ndcgs else 0.0,
         "avg_composed_tokens": mean(tokens) if tokens else 0.0,
     }
+    return metrics, results
