@@ -43,7 +43,7 @@ It lets multiple agents store, retrieve, and reuse context across sessions with:
   - MCP stdio end-to-end integration test harness
   - Docker + docker compose local stack
   - Makefile for common workflows
-  - CI (`ruff` + unit tests + Postgres integration tests + MCP E2E tests)
+  - CI (`ruff` + strict `mypy` + unit tests + Postgres integration tests + MCP E2E tests)
 
 ## Quickstart
 
@@ -67,6 +67,7 @@ Service URL: `http://localhost:8080`
 
 ```bash
 ruff check .
+PYTHONPATH=src mypy src tests
 pytest
 ```
 
@@ -89,6 +90,7 @@ docker compose down
 ```bash
 make install
 make lint
+make typecheck
 make test
 make run-api
 make run-worker

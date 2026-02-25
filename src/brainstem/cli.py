@@ -124,16 +124,16 @@ def main(argv: list[str] | None = None) -> int:
             graph_relation_weights=relation_weights,
         )
         if args.output_json:
-            output = Path(args.output_json)
-            output.parent.mkdir(parents=True, exist_ok=True)
-            output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
-            print(f"Wrote benchmark output to {output}")
+            benchmark_output_path = Path(args.output_json)
+            benchmark_output_path.parent.mkdir(parents=True, exist_ok=True)
+            benchmark_output_path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+            print(f"Wrote benchmark output to {benchmark_output_path}")
         print(json.dumps(result["metrics"], indent=2))
         return 0
 
     if args.command == "report":
         relation_weights = _parse_relation_weights_arg(args.graph_relation_weights)
-        output = generate_benchmark_report(
+        report_output_path = generate_benchmark_report(
             dataset=args.dataset,
             output_md=args.output_md,
             k=args.k,
@@ -142,7 +142,7 @@ def main(argv: list[str] | None = None) -> int:
             graph_half_life_hours=args.graph_half_life_hours,
             graph_relation_weights=relation_weights,
         )
-        print(f"Wrote benchmark report to {output}")
+        print(f"Wrote benchmark report to {report_output_path}")
         return 0
 
     if args.command == "leaderboard":

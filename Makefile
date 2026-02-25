@@ -1,4 +1,4 @@
-.PHONY: install lint test run-api run-worker run-mcp docker-up docker-down docker-logs docker-smoke benchmark report leaderboard perf-regression backup-sqlite restore-sqlite verify-restore-sqlite release-prep
+.PHONY: install lint typecheck test run-api run-worker run-mcp docker-up docker-down docker-logs docker-smoke benchmark report leaderboard perf-regression backup-sqlite restore-sqlite verify-restore-sqlite release-prep
 
 install:
 	python3 -m venv .venv
@@ -6,6 +6,9 @@ install:
 
 lint:
 	.venv/bin/ruff check .
+
+typecheck:
+	PYTHONPATH=src .venv/bin/mypy src tests
 
 test:
 	.venv/bin/pytest -q

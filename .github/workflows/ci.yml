@@ -29,6 +29,9 @@ jobs:
       - name: Lint
         run: ruff check .
 
+      - name: Type check
+        run: PYTHONPATH=src mypy src tests
+
       - name: Test
         run: pytest
 
