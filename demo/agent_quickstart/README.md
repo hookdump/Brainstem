@@ -9,6 +9,31 @@ It gives you:
 - concrete copy/paste prompt templates you can feed to your coding agent
 - practical use cases for feature work, incident debugging, and PR handoff
 
+## 0) Install Brainstem CLI (from repo root)
+
+If you have not installed Brainstem yet:
+
+```bash
+git clone git@github.com:hookdump/Brainstem.git
+cd Brainstem
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+```
+
+Alternative (same result):
+
+```bash
+make install
+source .venv/bin/activate
+```
+
+Verify CLI is available:
+
+```bash
+brainstem --help
+```
+
 ## 1) Start Brainstem API
 
 ```bash
@@ -58,4 +83,3 @@ Each file includes:
 2. Start each new coding session with one targeted `recall`.
 3. Use `compact` after long threads to create a short reusable summary memory.
 4. Paste recall/compact output into the agent prompt template from `prompts/`.
-
