@@ -123,6 +123,12 @@ Brainstem reads runtime config from environment variables:
 - `BRAINSTEM_API_KEYS`:
   - required when `BRAINSTEM_AUTH_MODE=api_key`
   - JSON object mapping keys to `{tenant_id, agent_id, role}`
+- `BRAINSTEM_MCP_AUTH_MODE`:
+  - `token` (default)
+  - `disabled` (local development only)
+- `BRAINSTEM_MCP_TOKENS`:
+  - required when `BRAINSTEM_MCP_AUTH_MODE=token`
+  - JSON object mapping MCP tokens to `{tenant_id, agent_id, role}`
 
 Example:
 
@@ -306,7 +312,32 @@ Run MCP server transport:
 
 ```bash
 pip install -e ".[dev,mcp]"
+export BRAINSTEM_MCP_AUTH_MODE=token
+export BRAINSTEM_MCP_TOKENS='{
+  "mcp-writer": {"tenant_id":"t_demo","agent_id":"a_writer","role":"writer"},
+  "mcp-admin": {"tenant_id":"t_demo","agent_id":"a_admin","role":"admin"}
+}'
 python scripts/mcp_server.py
+```
+
+MCP tools require auth by default. Include a token in payload metadata:
+
+```json
+{
+  "auth_token": "mcp-writer",
+  "scope": "team",
+  "query": "What constraints do we already know?"
+}
+```
+
+An alternative token envelope is also accepted:
+
+```json
+{
+  "_session": {"token": "mcp-writer"},
+  "scope": "team",
+  "query": "What constraints do we already know?"
+}
 ```
 
 ## Repository docs
