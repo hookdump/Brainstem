@@ -30,7 +30,7 @@ Status date: February 25, 2026
 - [ ] Upgrade async job queue to distributed workers with persistent retries and DLQ.
 - [ ] Harden MCP transport with auth/session security and integration fixtures. (`#19`)
 - [x] Add CI job for Postgres integration test execution. (`#20`)
-- [ ] Add first-party CLI for admin and ops workflows. (`#21`)
+- [x] Add first-party CLI for admin and ops workflows. (`#21`)
 - [ ] Add canary model registry for reranker/salience models.
 - [ ] Add optional graph projection for relation-aware retrieval.
 - [ ] Publish reproducible benchmark suite and leaderboard examples.
@@ -60,3 +60,4 @@ Status date: February 25, 2026
 - [x] Added Docker/local compose deployment path with smoke tooling.
 - [x] Added async retry attempts and dead-letter inspection endpoint.
 - [x] Added dedicated CI job for Postgres integration tests.
+- [x] Added first-party `brainstem` CLI plus backward-compatible script wrappers.
