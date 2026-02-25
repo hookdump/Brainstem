@@ -35,6 +35,7 @@ It lets multiple agents store, retrieve, and reuse context across sessions with:
 - Tooling:
   - migration script for SQLite
   - retrieval benchmark harness (Recall@K, nDCG, token estimate)
+  - MCP tool-service adapter and server entrypoint
   - CI (`ruff` + `pytest`)
 
 ## Quickstart
@@ -223,6 +224,13 @@ python scripts/generate_benchmark_report.py \
   --dataset benchmarks/retrieval_dataset.json \
   --output-md reports/retrieval_benchmark.md \
   --k 5
+```
+
+Run MCP server transport:
+
+```bash
+pip install -e ".[dev,mcp]"
+python scripts/mcp_server.py
 ```
 
 ## Repository docs
