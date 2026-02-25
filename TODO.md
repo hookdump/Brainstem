@@ -32,3 +32,5 @@ Status date: February 25, 2026
 - [x] Created private GitHub repo: `hookdump/Brainstem`.
 - [x] Initialized git + pushed `main` over SSH.
 - [x] Drafted concept and v0 implementation specification documents.
+- [x] Created roadmap issues in GitHub: `#1` to `#5`.
+- [x] Opened bootstrap implementation PR: `#6` (`feat/bootstrap-v0` -> `main`).
