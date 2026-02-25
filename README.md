@@ -1,4 +1,4 @@
-# Brainstem
+<img width="2816" height="1536" alt="BRAINSTEM" src="https://github.com/user-attachments/assets/0cb59bfe-f95a-4571-9598-3416933eae86" />
 
 Brainstem is a shared memory coprocessor for AI agents.
 
