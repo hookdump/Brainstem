@@ -1,4 +1,4 @@
-.PHONY: install lint test run-api run-worker run-mcp docker-up docker-down docker-logs docker-smoke benchmark report
+.PHONY: install lint test run-api run-worker run-mcp docker-up docker-down docker-logs docker-smoke benchmark report leaderboard
 
 install:
 	python3 -m venv .venv
@@ -36,3 +36,6 @@ benchmark:
 
 report:
 	.venv/bin/brainstem report --dataset benchmarks/retrieval_dataset.json --output-md reports/retrieval_benchmark.md --k 5
+
+leaderboard:
+	.venv/bin/brainstem leaderboard --manifest benchmarks/suite_manifest.json --output-dir reports/leaderboard --sqlite-dir .data/leaderboard

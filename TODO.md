@@ -33,7 +33,7 @@ Status date: February 25, 2026
 - [x] Add first-party CLI for admin and ops workflows. (`#21`)
 - [ ] Add canary model registry for reranker/salience models.
 - [ ] Add optional graph projection for relation-aware retrieval.
-- [ ] Publish reproducible benchmark suite and leaderboard examples.
+- [x] Publish reproducible benchmark suite and leaderboard examples. (`#30`)
 
 ## Done
 
@@ -63,3 +63,4 @@ Status date: February 25, 2026
 - [x] Added first-party `brainstem` CLI plus backward-compatible script wrappers.
 - [x] Hardened MCP auth/session defaults with token enforcement and deny/allow tests.
 - [x] Added SQLite-backed shared queue mode for distributed async workers and durable DLQ.
+- [x] Added benchmark suite manifest + leaderboard generation with CI artifacts.

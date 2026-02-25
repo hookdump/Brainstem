@@ -94,6 +94,7 @@ make run-worker
 make docker-up
 make docker-smoke
 make docker-down
+make leaderboard
 ```
 
 ### 6) First-party CLI commands
@@ -104,6 +105,7 @@ brainstem init-sqlite --db .data/brainstem.db
 brainstem init-postgres --dsn "postgresql://postgres:postgres@localhost:5432/brainstem"
 brainstem benchmark --backend sqlite --sqlite-path .data/bench.db --k 5
 brainstem report --output-md reports/retrieval_benchmark.md
+brainstem leaderboard --manifest benchmarks/suite_manifest.json --output-dir reports/leaderboard
 brainstem health --url http://localhost:8080/healthz
 ```
 
@@ -329,6 +331,18 @@ brainstem report \
   --k 5
 ```
 
+Generate reproducible leaderboard artifacts from suite manifest:
+
+```bash
+brainstem leaderboard \
+  --manifest benchmarks/suite_manifest.json \
+  --output-dir reports/leaderboard \
+  --sqlite-dir .data/leaderboard
+```
+
+CI generates the same leaderboard outputs on each run and uploads them as the
+`benchmark-leaderboard` workflow artifact.
+
 Run HTTP health check:
 
 ```bash
@@ -341,6 +355,7 @@ Compatibility wrappers remain available:
 python scripts/init_sqlite_db.py --db .data/brainstem.db
 python scripts/benchmark_recall.py --backend inmemory --k 5
 python scripts/generate_benchmark_report.py --dataset benchmarks/retrieval_dataset.json
+python scripts/generate_leaderboard.py --manifest benchmarks/suite_manifest.json
 ```
 
 Run MCP server transport:

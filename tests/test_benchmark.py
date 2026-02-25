@@ -47,3 +47,23 @@ def test_generate_benchmark_report_script(tmp_path: Path) -> None:
     content = report_path.read_text(encoding="utf-8")
     assert "Brainstem Retrieval Benchmark Report" in content
     assert "| Backend | Recall@K | nDCG@K | Avg Composed Tokens |" in content
+
+
+def test_generate_leaderboard_script(tmp_path: Path) -> None:
+    output_dir = tmp_path / "leaderboard"
+    sqlite_dir = tmp_path / "leaderboard-db"
+    subprocess.run(
+        [
+            sys.executable,
+            "scripts/generate_leaderboard.py",
+            "--manifest",
+            "benchmarks/suite_manifest.json",
+            "--output-dir",
+            str(output_dir),
+            "--sqlite-dir",
+            str(sqlite_dir),
+        ],
+        check=True,
+    )
+    assert (output_dir / "leaderboard.json").exists()
+    assert (output_dir / "leaderboard.md").exists()
