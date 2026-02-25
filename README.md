@@ -97,6 +97,9 @@ make docker-smoke
 make docker-down
 make leaderboard
 make perf-regression
+make backup-sqlite
+make restore-sqlite
+make verify-restore-sqlite
 ```
 
 ### 6) First-party CLI commands
@@ -472,6 +475,25 @@ The dedicated `Performance Regression` workflow runs weekly and on manual
 dispatch, uploads JSON/markdown artifacts, and fails if configured budgets are
 exceeded.
 
+## Backup and restore
+
+SQLite quick commands:
+
+```bash
+bash scripts/backup_sqlite.sh --memory-db .data/brainstem.db --registry-db .data/model_registry.db --out-dir backups/sqlite/latest
+bash scripts/restore_sqlite.sh --backup-dir backups/sqlite/latest --memory-db .data/brainstem.db --registry-db .data/model_registry.db
+python scripts/verify_sqlite_restore.py --work-dir .data/restore-verify --output-json .data/restore-verify/verification.json
+```
+
+Postgres quick commands:
+
+```bash
+bash scripts/backup_postgres.sh --dsn "postgresql://postgres:postgres@localhost:5432/brainstem" --out-dir backups/postgres/latest
+bash scripts/restore_postgres.sh --dsn "postgresql://postgres:postgres@localhost:5432/brainstem" --backup-file backups/postgres/latest/brainstem.pgdump
+```
+
+For full playbook, see `ops/BACKUP_RESTORE.md`.
+
 ### When to enable graph mode
 
 Enable graph mode when memory entries share entities/terms and you want recall
@@ -493,6 +515,7 @@ python scripts/benchmark_recall.py --backend inmemory --k 5
 python scripts/generate_benchmark_report.py --dataset benchmarks/retrieval_dataset.json
 python scripts/generate_leaderboard.py --manifest benchmarks/suite_manifest.json
 python scripts/run_performance_regression.py --iterations 200 --seed-count 100
+python scripts/verify_sqlite_restore.py --work-dir .data/restore-verify
 ```
 
 Run MCP server transport:
@@ -545,6 +568,7 @@ An alternative token envelope is also accepted:
 - [TODO.md](./TODO.md)
 - [CONTRIBUTING.md](./CONTRIBUTING.md)
 - [MAINTAINERS.md](./MAINTAINERS.md)
+- [ops/BACKUP_RESTORE.md](./ops/BACKUP_RESTORE.md)
 
 ## Workflow
 
