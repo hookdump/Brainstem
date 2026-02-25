@@ -42,7 +42,7 @@ It lets multiple agents store, retrieve, and reuse context across sessions with:
   - MCP tool-service adapter and server entrypoint
   - Docker + docker compose local stack
   - Makefile for common workflows
-  - CI (`ruff` + `pytest`)
+  - CI (`ruff` + unit tests + Postgres integration tests)
 
 ## Quickstart
 

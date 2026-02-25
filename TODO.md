@@ -29,7 +29,7 @@ Status date: February 25, 2026
 - [x] Add retry policy and dead-letter tracking for async jobs. (`#17`, in-process baseline)
 - [ ] Upgrade async job queue to distributed workers with persistent retries and DLQ.
 - [ ] Harden MCP transport with auth/session security and integration fixtures. (`#19`)
-- [ ] Add CI job for Postgres integration test execution. (`#20`)
+- [x] Add CI job for Postgres integration test execution. (`#20`)
 - [ ] Add first-party CLI for admin and ops workflows. (`#21`)
 - [ ] Add canary model registry for reranker/salience models.
 - [ ] Add optional graph projection for relation-aware retrieval.
@@ -59,3 +59,4 @@ Status date: February 25, 2026
 - [x] Added pgvector-assisted Postgres recall baseline and optional integration tests.
 - [x] Added Docker/local compose deployment path with smoke tooling.
 - [x] Added async retry attempts and dead-letter inspection endpoint.
+- [x] Added dedicated CI job for Postgres integration tests.
