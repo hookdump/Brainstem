@@ -20,6 +20,9 @@ It lets multiple agents store, retrieve, and reuse context across sessions with:
   - `postgres` (pgvector-ready scaffold)
 - Role model:
   - `reader`, `writer`, `admin`
+- Async job pipeline:
+  - queued background execution for `reflect` and `train`
+  - status polling via job endpoint
 - Memory quality baseline:
   - heuristic salience/confidence
   - contradiction signaling in recall output
@@ -109,6 +112,7 @@ brainstem-api
 - `DELETE /v0/memory/{memory_id}`
 - `POST /v0/memory/reflect`
 - `POST /v0/memory/train`
+- `GET /v0/jobs/{job_id}?tenant_id=...&agent_id=...`
 
 When auth mode is `api_key`, include:
 
@@ -164,6 +168,20 @@ curl -s "http://localhost:8080/v0/memory/<memory_id>?tenant_id=t_demo&agent_id=a
 curl -s -X DELETE http://localhost:8080/v0/memory/<memory_id> \
   -H "content-type: application/json" \
   -d '{"tenant_id":"t_demo","agent_id":"a_writer"}' | jq
+```
+
+### Reflect (async) + Job status
+
+```bash
+curl -s -X POST http://localhost:8080/v0/memory/reflect \
+  -H "content-type: application/json" \
+  -d '{"tenant_id":"t_demo","agent_id":"a_writer","window_hours":24,"max_candidates":8}' | jq
+```
+
+Use the returned `job_id`:
+
+```bash
+curl -s "http://localhost:8080/v0/jobs/<job_id>?tenant_id=t_demo&agent_id=a_writer" | jq
 ```
 
 ## Migrations and benchmark tools

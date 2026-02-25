@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import StrEnum
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -137,3 +137,14 @@ class MemoryDetails(BaseModel):
     source_ref: str | None
     created_at: datetime
     expires_at: datetime | None = None
+
+
+class JobStatusResponse(BaseModel):
+    job_id: str
+    kind: Literal["reflect", "train", "cleanup"]
+    status: Literal["queued", "running", "completed", "failed"]
+    created_at: datetime
+    started_at: datetime | None = None
+    finished_at: datetime | None = None
+    result: dict[str, Any] | None = None
+    error: str | None = None
