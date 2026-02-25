@@ -1,4 +1,4 @@
-.PHONY: install lint test run-api run-worker run-mcp docker-up docker-down docker-logs docker-smoke benchmark report leaderboard perf-regression
+.PHONY: install lint test run-api run-worker run-mcp docker-up docker-down docker-logs docker-smoke benchmark report leaderboard perf-regression backup-sqlite restore-sqlite verify-restore-sqlite
 
 install:
 	python3 -m venv .venv
@@ -42,3 +42,12 @@ leaderboard:
 
 perf-regression:
 	.venv/bin/brainstem perf-regression --output-json reports/performance/perf_regression.json --output-md reports/performance/perf_regression.md
+
+backup-sqlite:
+	bash scripts/backup_sqlite.sh --memory-db .data/brainstem.db --registry-db .data/model_registry.db --out-dir backups/sqlite/latest
+
+restore-sqlite:
+	bash scripts/restore_sqlite.sh --backup-dir backups/sqlite/latest --memory-db .data/brainstem.db --registry-db .data/model_registry.db
+
+verify-restore-sqlite:
+	PYTHONPATH=src .venv/bin/python scripts/verify_sqlite_restore.py --work-dir .data/restore-verify --output-json .data/restore-verify/verification.json

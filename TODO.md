@@ -42,7 +42,7 @@ Status date: February 25, 2026
 
 - [x] Select and publish an OSS license + maintainer policy. (`#41`)
 - [x] Add sustained load/performance regression suite (P95 latency + memory growth budgets). (`#42`)
-- [ ] Add backup/restore verification playbooks for SQLite/Postgres + model registry. (`#43`)
+- [x] Add backup/restore verification playbooks for SQLite/Postgres + model registry. (`#43`)
 - [ ] Add release automation (versioning/changelog/tags + PyPI publish workflow). (`#44`)
 
 ## Done
@@ -80,3 +80,4 @@ Status date: February 25, 2026
 - [x] Added MCP stdio end-to-end integration harness with CI coverage.
 - [x] Published MIT license + maintainer governance files and ownership policy.
 - [x] Added sustained performance regression tooling + scheduled workflow artifacts.
+- [x] Added backup/restore scripts + restore verification playbook and smoke tests.
