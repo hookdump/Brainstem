@@ -29,6 +29,7 @@ mcp = [
 ]
 
 [project.scripts]
+brainstem = "brainstem.cli:main"
 brainstem-api = "brainstem.main:run"
 
 [tool.pytest.ini_options]

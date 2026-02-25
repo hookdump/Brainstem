@@ -11,7 +11,7 @@ test:
 	.venv/bin/pytest -q
 
 run-api:
-	.venv/bin/brainstem-api
+	.venv/bin/brainstem serve-api
 
 run-mcp:
 	PYTHONPATH=src .venv/bin/python scripts/mcp_server.py
@@ -29,7 +29,7 @@ docker-smoke:
 	bash scripts/smoke_docker_stack.sh
 
 benchmark:
-	PYTHONPATH=src .venv/bin/python scripts/benchmark_recall.py --backend inmemory --k 5
+	.venv/bin/brainstem benchmark --backend inmemory --k 5
 
 report:
-	PYTHONPATH=src .venv/bin/python scripts/generate_benchmark_report.py --dataset benchmarks/retrieval_dataset.json --output-md reports/retrieval_benchmark.md --k 5
+	.venv/bin/brainstem report --dataset benchmarks/retrieval_dataset.json --output-md reports/retrieval_benchmark.md --k 5

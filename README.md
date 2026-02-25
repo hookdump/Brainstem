@@ -57,7 +57,7 @@ pip install -e ".[dev]"
 ### 2) Run the API
 
 ```bash
-brainstem-api
+brainstem serve-api
 ```
 
 Service URL: `http://localhost:8080`
@@ -94,6 +94,17 @@ make docker-smoke
 make docker-down
 ```
 
+### 6) First-party CLI commands
+
+```bash
+brainstem serve-api
+brainstem init-sqlite --db .data/brainstem.db
+brainstem init-postgres --dsn "postgresql://postgres:postgres@localhost:5432/brainstem"
+brainstem benchmark --backend sqlite --sqlite-path .data/bench.db --k 5
+brainstem report --output-md reports/retrieval_benchmark.md
+brainstem health --url http://localhost:8080/healthz
+```
+
 ## Configuration
 
 Brainstem reads runtime config from environment variables:
@@ -123,7 +134,7 @@ export BRAINSTEM_API_KEYS='{
   "writer-key": {"tenant_id":"t_demo","agent_id":"a_writer","role":"writer"},
   "admin-key": {"tenant_id":"t_demo","agent_id":"a_admin","role":"admin"}
 }'
-brainstem-api
+brainstem serve-api
 ```
 
 For PostgreSQL:
@@ -132,6 +143,12 @@ For PostgreSQL:
 pip install -e ".[dev,postgres]"
 export BRAINSTEM_STORE_BACKEND=postgres
 export BRAINSTEM_POSTGRES_DSN="postgresql://postgres:postgres@localhost:5432/brainstem"
+brainstem serve-api
+```
+
+Legacy entrypoint still works:
+
+```bash
 brainstem-api
 ```
 
@@ -246,29 +263,43 @@ curl -s "http://localhost:8080/v0/jobs/dead_letters?tenant_id=t_demo&agent_id=a_
 Initialize SQLite schema:
 
 ```bash
-python scripts/init_sqlite_db.py --db .data/brainstem.db
+brainstem init-sqlite --db .data/brainstem.db
 ```
 
 Initialize PostgreSQL schema:
 
 ```bash
-./scripts/init_postgres_db.sh "postgresql://postgres:postgres@localhost:5432/brainstem"
+brainstem init-postgres --dsn "postgresql://postgres:postgres@localhost:5432/brainstem"
 ```
 
 Run retrieval benchmark:
 
 ```bash
-python scripts/benchmark_recall.py --backend inmemory --k 5
-python scripts/benchmark_recall.py --backend sqlite --sqlite-path .data/benchmark.db --k 5
+brainstem benchmark --backend inmemory --k 5
+brainstem benchmark --backend sqlite --sqlite-path .data/benchmark.db --k 5
 ```
 
 Generate a markdown benchmark artifact:
 
 ```bash
-python scripts/generate_benchmark_report.py \
+brainstem report \
   --dataset benchmarks/retrieval_dataset.json \
   --output-md reports/retrieval_benchmark.md \
   --k 5
+```
+
+Run HTTP health check:
+
+```bash
+brainstem health --url http://localhost:8080/healthz
+```
+
+Compatibility wrappers remain available:
+
+```bash
+python scripts/init_sqlite_db.py --db .data/brainstem.db
+python scripts/benchmark_recall.py --backend inmemory --k 5
+python scripts/generate_benchmark_report.py --dataset benchmarks/retrieval_dataset.json
 ```
 
 Run MCP server transport:
