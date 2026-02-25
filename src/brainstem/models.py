@@ -159,3 +159,5 @@ class JobStatusResponse(BaseModel):
     finished_at: datetime | None = None
     result: dict[str, Any] | None = None
     error: str | None = None
+    attempts: int = 0
+    max_attempts: int = 1

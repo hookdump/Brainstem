@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 from time import perf_counter
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from starlette.responses import Response
 
 from brainstem.auth import AgentRole, AuthContext, AuthManager
@@ -279,6 +279,28 @@ def create_app(
             status="queued",
             notes="Cleanup job queued.",
         )
+
+    @app.get("/v0/jobs/dead_letters")
+    async def dead_letters(
+        tenant_id: str,
+        agent_id: str,
+        auth_context: Annotated[AuthContext, Depends(get_auth_context)],
+        limit: int = Query(default=50, ge=1, le=200),
+    ) -> dict[str, object]:
+        auth.authorize(
+            context=auth_context,
+            tenant_id=tenant_id,
+            agent_id=agent_id,
+            minimum_role=AgentRole.ADMIN,
+        )
+        jobs_list = jobs.list_dead_letters(tenant_id=tenant_id, limit=limit)
+        return {
+            "count": len(jobs_list),
+            "items": [
+                JobStatusResponse.model_validate(job.to_dict()).model_dump()
+                for job in jobs_list
+            ],
+        }
 
     @app.get("/v0/jobs/{job_id}", response_model=JobStatusResponse)
     async def job_status(
