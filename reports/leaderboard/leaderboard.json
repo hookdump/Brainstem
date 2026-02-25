@@ -1,14 +1,21 @@
 {
   "schema_version": "2026-02-25",
-  "generated_at": "2026-02-25T07:21:06.812904+00:00",
+  "generated_at": "2026-02-25T14:26:24.063779+00:00",
   "suites": [
     {
       "id": "retrieval_core_v1",
       "dataset_path": "benchmarks/retrieval_dataset.json",
       "k": 5,
+      "graph_modes": [
+        "off",
+        "on"
+      ],
+      "focus_tags": [],
       "runs": [
         {
           "backend": "inmemory",
+          "graph_mode": "off",
+          "graph_enabled": false,
           "k": 5,
           "dataset_path": "benchmarks/retrieval_dataset.json",
           "case_count": 10,
@@ -17,18 +24,265 @@
             "recall@5": 1.0,
             "ndcg@5": 0.8824356157188729,
             "avg_composed_tokens": 48.9
+          },
+          "slice_metrics": {}
+        },
+        {
+          "backend": "inmemory",
+          "graph_mode": "on",
+          "graph_enabled": true,
+          "k": 5,
+          "dataset_path": "benchmarks/retrieval_dataset.json",
+          "case_count": 10,
+          "seed_count": 8,
+          "metrics": {
+            "recall@5": 1.0,
+            "ndcg@5": 0.8824356157188729,
+            "avg_composed_tokens": 38.9
+          },
+          "slice_metrics": {}
+        },
+        {
+          "backend": "sqlite",
+          "graph_mode": "off",
+          "graph_enabled": false,
+          "k": 5,
+          "dataset_path": "benchmarks/retrieval_dataset.json",
+          "case_count": 10,
+          "seed_count": 8,
+          "metrics": {
+            "recall@5": 1.0,
+            "ndcg@5": 0.8824356157188729,
+            "avg_composed_tokens": 48.9
+          },
+          "slice_metrics": {}
+        },
+        {
+          "backend": "sqlite",
+          "graph_mode": "on",
+          "graph_enabled": true,
+          "k": 5,
+          "dataset_path": "benchmarks/retrieval_dataset.json",
+          "case_count": 10,
+          "seed_count": 8,
+          "metrics": {
+            "recall@5": 1.0,
+            "ndcg@5": 0.8824356157188729,
+            "avg_composed_tokens": 38.9
+          },
+          "slice_metrics": {}
+        }
+      ],
+      "graph_dashboard": [
+        {
+          "backend": "inmemory",
+          "overall": {
+            "recall@5": 0.0,
+            "ndcg@5": 0.0,
+            "avg_composed_tokens": -10.0
+          },
+          "slices": {}
+        },
+        {
+          "backend": "sqlite",
+          "overall": {
+            "recall@5": 0.0,
+            "ndcg@5": 0.0,
+            "avg_composed_tokens": -10.0
+          },
+          "slices": {}
+        }
+      ]
+    },
+    {
+      "id": "relation_graph_v1",
+      "dataset_path": "benchmarks/relation_heavy_dataset.json",
+      "k": 4,
+      "graph_modes": [
+        "off",
+        "on"
+      ],
+      "focus_tags": [
+        "relation",
+        "multi_hop"
+      ],
+      "runs": [
+        {
+          "backend": "inmemory",
+          "graph_mode": "on",
+          "graph_enabled": true,
+          "k": 4,
+          "dataset_path": "benchmarks/relation_heavy_dataset.json",
+          "case_count": 6,
+          "seed_count": 8,
+          "metrics": {
+            "recall@4": 1.0,
+            "ndcg@4": 0.525005098567695,
+            "avg_composed_tokens": 39.833333333333336
+          },
+          "slice_metrics": {
+            "relation": {
+              "cases": 6.0,
+              "recall@4": 1.0,
+              "ndcg@4": 0.525005098567695,
+              "avg_composed_tokens": 39.833333333333336
+            },
+            "single_hop": {
+              "cases": 4.0,
+              "recall@4": 1.0,
+              "ndcg@4": 0.548134016304077,
+              "avg_composed_tokens": 39.75
+            },
+            "multi_hop": {
+              "cases": 2.0,
+              "recall@4": 1.0,
+              "ndcg@4": 0.4787472630949309,
+              "avg_composed_tokens": 40.0
+            }
           }
         },
         {
           "backend": "sqlite",
-          "k": 5,
-          "dataset_path": "benchmarks/retrieval_dataset.json",
-          "case_count": 10,
+          "graph_mode": "on",
+          "graph_enabled": true,
+          "k": 4,
+          "dataset_path": "benchmarks/relation_heavy_dataset.json",
+          "case_count": 6,
           "seed_count": 8,
           "metrics": {
-            "recall@5": 1.0,
-            "ndcg@5": 0.8824356157188729,
-            "avg_composed_tokens": 48.9
+            "recall@4": 1.0,
+            "ndcg@4": 0.525005098567695,
+            "avg_composed_tokens": 39.833333333333336
+          },
+          "slice_metrics": {
+            "relation": {
+              "cases": 6.0,
+              "recall@4": 1.0,
+              "ndcg@4": 0.525005098567695,
+              "avg_composed_tokens": 39.833333333333336
+            },
+            "single_hop": {
+              "cases": 4.0,
+              "recall@4": 1.0,
+              "ndcg@4": 0.548134016304077,
+              "avg_composed_tokens": 39.75
+            },
+            "multi_hop": {
+              "cases": 2.0,
+              "recall@4": 1.0,
+              "ndcg@4": 0.4787472630949309,
+              "avg_composed_tokens": 40.0
+            }
+          }
+        },
+        {
+          "backend": "inmemory",
+          "graph_mode": "off",
+          "graph_enabled": false,
+          "k": 4,
+          "dataset_path": "benchmarks/relation_heavy_dataset.json",
+          "case_count": 6,
+          "seed_count": 8,
+          "metrics": {
+            "recall@4": 0.8333333333333334,
+            "ndcg@4": 0.4461414265871064,
+            "avg_composed_tokens": 51.833333333333336
+          },
+          "slice_metrics": {
+            "relation": {
+              "cases": 6.0,
+              "recall@4": 0.8333333333333334,
+              "ndcg@4": 0.4461414265871064,
+              "avg_composed_tokens": 51.833333333333336
+            },
+            "single_hop": {
+              "cases": 4.0,
+              "recall@4": 0.75,
+              "ndcg@4": 0.44046487678572877,
+              "avg_composed_tokens": 52.25
+            },
+            "multi_hop": {
+              "cases": 2.0,
+              "recall@4": 1.0,
+              "ndcg@4": 0.45749452618986175,
+              "avg_composed_tokens": 51.0
+            }
+          }
+        },
+        {
+          "backend": "sqlite",
+          "graph_mode": "off",
+          "graph_enabled": false,
+          "k": 4,
+          "dataset_path": "benchmarks/relation_heavy_dataset.json",
+          "case_count": 6,
+          "seed_count": 8,
+          "metrics": {
+            "recall@4": 0.8333333333333334,
+            "ndcg@4": 0.4461414265871064,
+            "avg_composed_tokens": 51.833333333333336
+          },
+          "slice_metrics": {
+            "relation": {
+              "cases": 6.0,
+              "recall@4": 0.8333333333333334,
+              "ndcg@4": 0.4461414265871064,
+              "avg_composed_tokens": 51.833333333333336
+            },
+            "single_hop": {
+              "cases": 4.0,
+              "recall@4": 0.75,
+              "ndcg@4": 0.44046487678572877,
+              "avg_composed_tokens": 52.25
+            },
+            "multi_hop": {
+              "cases": 2.0,
+              "recall@4": 1.0,
+              "ndcg@4": 0.45749452618986175,
+              "avg_composed_tokens": 51.0
+            }
+          }
+        }
+      ],
+      "graph_dashboard": [
+        {
+          "backend": "inmemory",
+          "overall": {
+            "recall@4": 0.16666666666666663,
+            "ndcg@4": 0.07886367198058852,
+            "avg_composed_tokens": -12.0
+          },
+          "slices": {
+            "relation": {
+              "recall@4": 0.16666666666666663,
+              "ndcg@4": 0.07886367198058852,
+              "avg_composed_tokens": -12.0
+            },
+            "multi_hop": {
+              "recall@4": 0.0,
+              "ndcg@4": 0.021252736905069125,
+              "avg_composed_tokens": -11.0
+            }
+          }
+        },
+        {
+          "backend": "sqlite",
+          "overall": {
+            "recall@4": 0.16666666666666663,
+            "ndcg@4": 0.07886367198058852,
+            "avg_composed_tokens": -12.0
+          },
+          "slices": {
+            "relation": {
+              "recall@4": 0.16666666666666663,
+              "ndcg@4": 0.07886367198058852,
+              "avg_composed_tokens": -12.0
+            },
+            "multi_hop": {
+              "recall@4": 0.0,
+              "ndcg@4": 0.021252736905069125,
+              "avg_composed_tokens": -11.0
+            }
           }
         }
       ]

@@ -1,6 +1,11 @@
 from __future__ import annotations
 
-from brainstem.graph import GraphAugmentedRepository, InMemoryGraphStore, extract_relation_terms
+from brainstem.graph import (
+    GraphAugmentedRepository,
+    InMemoryGraphStore,
+    extract_relation_terms,
+    parse_relation_weights_json,
+)
 from brainstem.models import RecallRequest, RememberRequest
 from brainstem.store import InMemoryRepository
 
@@ -59,3 +64,71 @@ def test_graph_augmented_recall_adds_related_memory() -> None:
         )
     )
     assert len(recall.items) == 2
+
+
+def test_parse_relation_weights_json() -> None:
+    parsed = parse_relation_weights_json('{"reference": 2.5, "keyword": 0.9}')
+    assert parsed == {"reference": 2.5, "keyword": 0.9}
+
+
+def test_graph_augmented_recall_uses_query_seed_candidates() -> None:
+    repository = InMemoryRepository()
+    graph = InMemoryGraphStore()
+
+    remember = repository.remember(
+        RememberRequest.model_validate(
+            {
+                "tenant_id": "t_graph",
+                "agent_id": "a_graph",
+                "scope": "team",
+                "items": [
+                    {
+                        "type": "fact",
+                        "text": "Regulation pack RC-22 maps to retention profile RD-91.",
+                    },
+                    {
+                        "type": "policy",
+                        "text": "RD-91 enforces 400-day retention and legal hold exports.",
+                    },
+                    {
+                        "type": "fact",
+                        "text": "Regulation pack RC-22 summary stays in legal review queue.",
+                    },
+                ],
+            }
+        )
+    )
+    anchor_id, detail_id, noise_id = remember.memory_ids
+    graph.project_memory(
+        "t_graph",
+        anchor_id,
+        "Regulation pack RC-22 maps to retention profile RD-91.",
+    )
+    graph.project_memory(
+        "t_graph",
+        detail_id,
+        "RD-91 enforces 400-day retention and legal hold exports.",
+    )
+    graph.project_memory(
+        "t_graph",
+        noise_id,
+        "Regulation pack RC-22 summary stays in legal review queue.",
+    )
+
+    payload = RecallRequest.model_validate(
+        {
+            "tenant_id": "t_graph",
+            "agent_id": "a_graph",
+            "scope": "team",
+            "query": "What does regulation pack RC-22 require?",
+            "budget": {"max_items": 2, "max_tokens": 2000},
+        }
+    )
+    baseline = repository.recall(payload)
+    baseline_ids = [item.memory_id for item in baseline.items]
+    assert detail_id not in baseline_ids
+
+    augmented = GraphAugmentedRepository(repository=repository, graph_store=graph, max_expansion=2)
+    recall = augmented.recall(payload)
+    recall_ids = [item.memory_id for item in recall.items]
+    assert detail_id in recall_ids

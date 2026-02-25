@@ -104,6 +104,7 @@ brainstem serve-api
 brainstem init-sqlite --db .data/brainstem.db
 brainstem init-postgres --dsn "postgresql://postgres:postgres@localhost:5432/brainstem"
 brainstem benchmark --backend sqlite --sqlite-path .data/bench.db --k 5
+brainstem benchmark --dataset benchmarks/relation_heavy_dataset.json --backend sqlite --graph-enabled --k 4
 brainstem report --output-md reports/retrieval_benchmark.md
 brainstem leaderboard --manifest benchmarks/suite_manifest.json --output-dir reports/leaderboard
 brainstem health --url http://localhost:8080/healthz
@@ -146,6 +147,11 @@ Brainstem reads runtime config from environment variables:
   - `true` enables relation graph projection + recall expansion
 - `BRAINSTEM_GRAPH_MAX_EXPANSION`:
   - max extra graph-related memories appended during recall (default `4`)
+- `BRAINSTEM_GRAPH_HALF_LIFE_HOURS`:
+  - recency half-life for graph edge decay (default `168`)
+- `BRAINSTEM_GRAPH_RELATION_WEIGHTS`:
+  - optional JSON override for relation scoring weights
+  - defaults: `{"keyword":1.0,"phrase":1.4,"temporal":1.2,"reference":1.6}`
 - `BRAINSTEM_MODEL_REGISTRY_BACKEND`:
   - `inmemory` (default)
   - `sqlite`
@@ -411,6 +417,8 @@ Run retrieval benchmark:
 brainstem benchmark --backend inmemory --k 5
 brainstem benchmark --backend sqlite --sqlite-path .data/benchmark.db --k 5
 brainstem benchmark --backend sqlite --graph-enabled --graph-max-expansion 4 --k 5
+brainstem benchmark --dataset benchmarks/relation_heavy_dataset.json --backend sqlite --graph-enabled --k 4
+brainstem benchmark --graph-enabled --graph-relation-weights '{"reference": 2.0}' --k 5
 ```
 
 Generate a markdown benchmark artifact:
@@ -430,6 +438,11 @@ brainstem leaderboard \
   --output-dir reports/leaderboard \
   --sqlite-dir .data/leaderboard
 ```
+
+Leaderboard markdown now includes:
+- per-suite ranking for `graph=off/on`,
+- graph quality delta dashboard (`on - off`) per backend,
+- relation-slice deltas for suites with tagged cases.
 
 CI generates the same leaderboard outputs on each run and uploads them as the
 `benchmark-leaderboard` workflow artifact.

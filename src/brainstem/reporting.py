@@ -13,7 +13,18 @@ def generate_benchmark_report(
     output_md: str,
     k: int,
     sqlite_path: str,
+    graph_max_expansion: int = 4,
+    graph_half_life_hours: float = 168.0,
+    graph_relation_weights: dict[str, float] | None = None,
 ) -> str:
+    sqlite_target = Path(sqlite_path)
+    sqlite_off_path = sqlite_target.with_name(f"{sqlite_target.stem}_off{sqlite_target.suffix}")
+    sqlite_on_path = sqlite_target.with_name(f"{sqlite_target.stem}_on{sqlite_target.suffix}")
+    sqlite_off_path.parent.mkdir(parents=True, exist_ok=True)
+    for path in (sqlite_off_path, sqlite_on_path):
+        if path.exists():
+            path.unlink()
+
     inmemory_off = run_benchmark(
         dataset_path=dataset,
         backend="inmemory",
@@ -25,20 +36,26 @@ def generate_benchmark_report(
         backend="inmemory",
         k=k,
         graph_enabled=True,
+        graph_max_expansion=graph_max_expansion,
+        graph_half_life_hours=graph_half_life_hours,
+        graph_relation_weights=graph_relation_weights,
     )
     sqlite_off = run_benchmark(
         dataset_path=dataset,
         backend="sqlite",
-        sqlite_path=sqlite_path,
+        sqlite_path=str(sqlite_off_path),
         k=k,
         graph_enabled=False,
     )
     sqlite_on = run_benchmark(
         dataset_path=dataset,
         backend="sqlite",
-        sqlite_path=sqlite_path,
+        sqlite_path=str(sqlite_on_path),
         k=k,
         graph_enabled=True,
+        graph_max_expansion=graph_max_expansion,
+        graph_half_life_hours=graph_half_life_hours,
+        graph_relation_weights=graph_relation_weights,
     )
 
     def metrics_row(label: str, graph_label: str, benchmark: dict[str, object]) -> str:
@@ -104,6 +121,21 @@ def generate_benchmark_report(
             f"| {case['name']} | {case['recall']:.3f} | {case['ndcg']:.3f} | "
             f"{case['composed_tokens']:.1f} |"
         )
+
+    slice_metrics = inmemory_on.get("slice_metrics")
+    if isinstance(slice_metrics, dict) and slice_metrics:
+        lines.append("")
+        lines.append("## Relation Slice Metrics (inmemory, graph on)")
+        lines.append("")
+        lines.append("| Tag | Cases | Recall@K | nDCG@K | Avg Tokens |")
+        lines.append("| --- | ---: | ---: | ---: | ---: |")
+        for tag, metrics in sorted(slice_metrics.items()):
+            if not isinstance(metrics, dict):
+                continue
+            lines.append(
+                f"| {tag} | {metrics['cases']:.0f} | {metrics[f'recall@{k}']:.3f} | "
+                f"{metrics[f'ndcg@{k}']:.3f} | {metrics['avg_composed_tokens']:.1f} |"
+            )
 
     output_path = Path(output_md)
     output_path.parent.mkdir(parents=True, exist_ok=True)

@@ -9,8 +9,11 @@ from brainstem.leaderboard import load_suite_manifest, write_leaderboard_artifac
 def test_load_suite_manifest() -> None:
     manifest = load_suite_manifest("benchmarks/suite_manifest.json")
     assert manifest["schema_version"] == "2026-02-25"
-    assert len(manifest["suites"]) >= 1
+    assert len(manifest["suites"]) >= 2
     assert manifest["suites"][0]["id"] == "retrieval_core_v1"
+    assert manifest["suites"][0]["graph_modes"] == ["off", "on"]
+    assert manifest["suites"][1]["id"] == "relation_graph_v1"
+    assert "focus_tags" in manifest["suites"][1]
 
 
 def test_write_leaderboard_artifacts(tmp_path: Path) -> None:
@@ -30,7 +33,12 @@ def test_write_leaderboard_artifacts(tmp_path: Path) -> None:
     payload = json.loads(json_file.read_text(encoding="utf-8"))
     assert payload["schema_version"] == "2026-02-25"
     assert len(payload["suites"]) >= 1
+    first_suite = payload["suites"][0]
+    assert "graph_dashboard" in first_suite
+    assert any("graph_mode" in run for run in first_suite["runs"])
 
     markdown = md_file.read_text(encoding="utf-8")
     assert "Brainstem Benchmark Leaderboard" in markdown
+    assert "Graph Quality Dashboard" in markdown
+    assert "Relation Slice Deltas" in markdown
     assert "Contribution Guide" in markdown

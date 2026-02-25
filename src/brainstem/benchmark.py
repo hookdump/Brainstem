@@ -4,10 +4,16 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, TypedDict
+from statistics import mean
+from typing import Any, NotRequired, TypedDict
 
 from brainstem.eval import EvalCase, run_retrieval_eval_detailed
-from brainstem.graph import GraphAugmentedRepository, InMemoryGraphStore, SQLiteGraphStore
+from brainstem.graph import (
+    DEFAULT_RELATION_WEIGHTS,
+    GraphAugmentedRepository,
+    InMemoryGraphStore,
+    SQLiteGraphStore,
+)
 from brainstem.models import RememberRequest
 from brainstem.store import InMemoryRepository, MemoryRepository, SQLiteRepository
 
@@ -24,6 +30,7 @@ class DatasetCase(TypedDict):
     name: str
     query: str
     expected_seed_ids: list[str]
+    tags: NotRequired[list[str]]
 
 
 class BenchmarkDataset(TypedDict):
@@ -40,11 +47,40 @@ def load_benchmark_dataset(path: str) -> BenchmarkDataset:
     for key in ("tenant_id", "agent_id", "seeds", "cases"):
         if key not in payload:
             raise ValueError(f"Dataset JSON missing required key: {key}")
+
+    seeds: list[SeedItem] = []
+    for seed in payload["seeds"]:
+        if not isinstance(seed, dict):
+            raise ValueError("Dataset `seeds` entries must be objects.")
+        seeds.append(
+            SeedItem(
+                id=str(seed["id"]),
+                type=str(seed["type"]),
+                text=str(seed["text"]),
+                scope=str(seed["scope"]),
+                trust_level=str(seed["trust_level"]),
+            )
+        )
+
+    cases: list[DatasetCase] = []
+    for case in payload["cases"]:
+        if not isinstance(case, dict):
+            raise ValueError("Dataset `cases` entries must be objects.")
+        parsed_case = DatasetCase(
+            name=str(case["name"]),
+            query=str(case["query"]),
+            expected_seed_ids=[str(seed_id) for seed_id in list(case["expected_seed_ids"])],
+        )
+        raw_tags = case.get("tags")
+        if raw_tags is not None:
+            parsed_case["tags"] = [str(tag) for tag in list(raw_tags)]
+        cases.append(parsed_case)
+
     return BenchmarkDataset(
         tenant_id=str(payload["tenant_id"]),
         agent_id=str(payload["agent_id"]),
-        seeds=list(payload["seeds"]),
-        cases=list(payload["cases"]),
+        seeds=seeds,
+        cases=cases,
     )
 
 
@@ -63,13 +99,24 @@ def run_benchmark(
     k: int = 5,
     graph_enabled: bool = False,
     graph_max_expansion: int = 4,
+    graph_half_life_hours: float = 168.0,
+    graph_relation_weights: dict[str, float] | None = None,
 ) -> dict[str, Any]:
     dataset = load_benchmark_dataset(dataset_path)
     repository = _build_repository(backend=backend, sqlite_path=sqlite_path)
     graph_store: InMemoryGraphStore | SQLiteGraphStore | None = None
     if graph_enabled:
         graph_store = (
-            InMemoryGraphStore() if backend == "inmemory" else SQLiteGraphStore(sqlite_path)
+            InMemoryGraphStore(
+                half_life_hours=graph_half_life_hours,
+                relation_weights=graph_relation_weights,
+            )
+            if backend == "inmemory"
+            else SQLiteGraphStore(
+                sqlite_path,
+                half_life_hours=graph_half_life_hours,
+                relation_weights=graph_relation_weights,
+            )
         )
 
     tenant_id = dataset["tenant_id"]
@@ -129,6 +176,34 @@ def run_benchmark(
         k=k,
     )
 
+    case_tag_lookup = {
+        case["name"]: [tag for tag in case.get("tags", [])]
+        for case in dataset["cases"]
+    }
+    slice_scores: dict[str, list[dict[str, float]]] = {}
+    for result in case_results:
+        tags = case_tag_lookup.get(result["name"], [])
+        for tag in tags:
+            slice_scores.setdefault(tag, []).append(
+                {
+                    "recall": float(result["recall"]),
+                    "ndcg": float(result["ndcg"]),
+                    "tokens": float(result["composed_tokens"]),
+                }
+            )
+
+    slice_metrics: dict[str, dict[str, float]] = {}
+    for tag, values in slice_scores.items():
+        recalls = [entry["recall"] for entry in values]
+        ndcgs = [entry["ndcg"] for entry in values]
+        tokens = [entry["tokens"] for entry in values]
+        slice_metrics[tag] = {
+            "cases": float(len(values)),
+            f"recall@{k}": mean(recalls) if recalls else 0.0,
+            f"ndcg@{k}": mean(ndcgs) if ndcgs else 0.0,
+            "avg_composed_tokens": mean(tokens) if tokens else 0.0,
+        }
+
     close = getattr(repository, "close", None)
     if callable(close):
         close()
@@ -140,9 +215,16 @@ def run_benchmark(
         "backend": backend,
         "k": k,
         "graph_enabled": graph_enabled,
+        "graph_max_expansion": graph_max_expansion,
+        "graph_half_life_hours": graph_half_life_hours,
+        "graph_relation_weights": {
+            **DEFAULT_RELATION_WEIGHTS,
+            **(graph_relation_weights or {}),
+        },
         "dataset_path": dataset_path,
         "seed_count": len(dataset["seeds"]),
         "case_count": len(dataset["cases"]),
         "metrics": metrics,
+        "slice_metrics": slice_metrics,
         "case_results": case_results,
     }
