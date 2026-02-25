@@ -19,7 +19,7 @@ Status date: February 25, 2026
 - [x] Add baseline conflict tracking for contradictory facts in recall responses.
 - [x] Add retention/TTL workflow support (`expires_at`) in memory ingestion and recall filtering.
 - [x] Expand benchmark dataset and publish reproducible benchmark report. (`#3`)
-- [ ] Add end-to-end MCP integration test harness. (`#37`)
+- [x] Add end-to-end MCP integration test harness. (`#37`)
 
 ## Later
 
@@ -70,3 +70,4 @@ Status date: February 25, 2026
 - [x] Added canary model registry endpoints with rollout/promotion/rollback and signals.
 - [x] Added optional graph projection + graph-assisted recall expansion across backends.
 - [x] Added persistent model registry backends and model audit history API.
+- [x] Added MCP stdio end-to-end integration harness with CI coverage.

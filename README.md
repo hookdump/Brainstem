@@ -40,9 +40,10 @@ It lets multiple agents store, retrieve, and reuse context across sessions with:
   - migration script for SQLite
   - retrieval benchmark harness (Recall@K, nDCG, token estimate)
   - MCP tool-service adapter and server entrypoint
+  - MCP stdio end-to-end integration test harness
   - Docker + docker compose local stack
   - Makefile for common workflows
-  - CI (`ruff` + unit tests + Postgres integration tests)
+  - CI (`ruff` + unit tests + Postgres integration tests + MCP E2E tests)
 
 ## Quickstart
 
@@ -480,6 +481,15 @@ export BRAINSTEM_MCP_TOKENS='{
 }'
 python scripts/mcp_server.py
 ```
+
+Run MCP end-to-end integration tests:
+
+```bash
+pip install -e ".[dev,mcp]"
+pytest tests/test_mcp_integration_e2e.py -q
+```
+
+The CI workflow runs the same MCP E2E suite in the `mcp-integration` job.
 
 MCP tools require auth by default. Include a token in payload metadata:
 
