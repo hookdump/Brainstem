@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Architecture and v0 spec
+    url: https://github.com/hookdump/Brainstem/blob/main/BRAIN_V0_TECH_SPEC.md
+    about: Review architecture and scope before opening large design issues.
