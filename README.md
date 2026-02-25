@@ -187,6 +187,15 @@ python scripts/benchmark_recall.py --backend inmemory --k 5
 python scripts/benchmark_recall.py --backend sqlite --sqlite-path .data/benchmark.db --k 5
 ```
 
+Generate a markdown benchmark artifact:
+
+```bash
+python scripts/generate_benchmark_report.py \
+  --dataset benchmarks/retrieval_dataset.json \
+  --output-md reports/retrieval_benchmark.md \
+  --k 5
+```
+
 ## Repository docs
 
 - [BRAIN_ARCHITECTURE.md](./BRAIN_ARCHITECTURE.md)

@@ -18,7 +18,7 @@ Status date: February 25, 2026
 - [x] Build baseline benchmark harness for Recall@K and token efficiency. (`#3`, local script)
 - [x] Add baseline conflict tracking for contradictory facts in recall responses.
 - [x] Add retention/TTL workflow support (`expires_at`) in memory ingestion and recall filtering.
-- [ ] Expand benchmark dataset and publish reproducible benchmark report. (`#3`)
+- [x] Expand benchmark dataset and publish reproducible benchmark report. (`#3`)
 
 ## Later
 
@@ -45,3 +45,4 @@ Status date: February 25, 2026
 - [x] Added new backlog issues for retention cleanup and MCP transport (`#7`, `#8`).
 - [x] Added observability baseline (`/v0/metrics` counters + latency summaries) with tests.
 - [x] Added Postgres backend scaffold + pgvector migration baseline.
+- [x] Published benchmark dataset and report artifact (`reports/retrieval_benchmark.md`).
