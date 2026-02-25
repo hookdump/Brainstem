@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
+
 import httpx
 import pytest
 
@@ -139,3 +141,53 @@ async def test_reflect_and_train() -> None:
         )
         assert train.status_code == 200
         assert train.json()["status"] == "queued"
+
+
+@pytest.mark.anyio
+async def test_recall_reports_conflict_and_honors_expiry() -> None:
+    async with _client() as client:
+        expired_time = (datetime.now(UTC) - timedelta(minutes=1)).isoformat()
+        writes = [
+            {
+                "type": "fact",
+                "text": "Release must include integration tests.",
+                "trust_level": "trusted_tool",
+            },
+            {
+                "type": "fact",
+                "text": "Release must not include integration tests.",
+                "trust_level": "trusted_tool",
+            },
+            {
+                "type": "fact",
+                "text": "This expired memory should never be returned.",
+                "trust_level": "trusted_tool",
+                "expires_at": expired_time,
+            },
+        ]
+        remember = await client.post(
+            "/v0/memory/remember",
+            json={
+                "tenant_id": "t_demo",
+                "agent_id": "a_writer",
+                "scope": "team",
+                "items": writes,
+            },
+        )
+        assert remember.status_code == 200
+
+        recall = await client.post(
+            "/v0/memory/recall",
+            json={
+                "tenant_id": "t_demo",
+                "agent_id": "a_writer",
+                "scope": "global",
+                "query": "What are release integration test rules?",
+                "budget": {"max_items": 10, "max_tokens": 4000},
+            },
+        )
+        assert recall.status_code == 200
+        payload = recall.json()
+        returned_texts = [item["text"] for item in payload["items"]]
+        assert "This expired memory should never be returned." not in returned_texts
+        assert len(payload["conflicts"]) >= 1

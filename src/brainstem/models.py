@@ -35,6 +35,7 @@ class RememberInputItem(BaseModel):
     trust_level: TrustLevel = TrustLevel.USER_CLAIM
     confidence: float | None = Field(default=None, ge=0.0, le=1.0)
     salience: float | None = Field(default=None, ge=0.0, le=1.0)
+    expires_at: datetime | None = None
 
 
 class RememberRequest(BaseModel):
@@ -135,3 +136,4 @@ class MemoryDetails(BaseModel):
     salience: float
     source_ref: str | None
     created_at: datetime
+    expires_at: datetime | None = None

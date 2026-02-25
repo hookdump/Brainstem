@@ -16,8 +16,8 @@ Status date: February 25, 2026
 - [x] Implement DB schema + migrations baseline from `BRAIN_V0_TECH_SPEC.md` (SQLite v0).
 - [x] Add idempotency persistence in storage layer (SQLite backend).
 - [x] Build baseline benchmark harness for Recall@K and token efficiency. (`#3`, local script)
-- [ ] Add conflict tracking for contradictory facts.
-- [ ] Add retention/TTL and deletion policy workflows.
+- [x] Add baseline conflict tracking for contradictory facts in recall responses.
+- [x] Add retention/TTL workflow support (`expires_at`) in memory ingestion and recall filtering.
 - [ ] Expand benchmark dataset and publish reproducible benchmark report. (`#3`)
 
 ## Later
@@ -40,3 +40,4 @@ Status date: February 25, 2026
 - [x] Expanded tests for auth and SQLite persistence.
 - [x] Added retrieval eval harness (`scripts/benchmark_recall.py`) with tests.
 - [x] Closed GitHub issue `#2` (auth middleware complete for v0).
+- [x] Added TTL-aware retrieval and contradiction signaling in recall.

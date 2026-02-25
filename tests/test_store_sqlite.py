@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from brainstem.models import RecallRequest, RememberRequest, Scope
@@ -107,4 +108,38 @@ def test_sqlite_private_scope_isolation(tmp_path: Path) -> None:
         memory_id=memory_id,
     )
     assert cross_agent_delete.deleted is False
+    repo.close()
+
+
+def test_sqlite_expired_memory_not_recalled(tmp_path: Path) -> None:
+    db_path = tmp_path / "brainstem-expiry.db"
+    repo = SQLiteRepository(str(db_path))
+    past = (datetime.now(UTC) - timedelta(minutes=1)).isoformat()
+    repo.remember(
+        RememberRequest.model_validate(
+            {
+                "tenant_id": "t_sql",
+                "agent_id": "a_writer",
+                "scope": "team",
+                "items": [
+                    {
+                        "type": "fact",
+                        "text": "This memory is already expired.",
+                        "expires_at": past,
+                    }
+                ],
+            }
+        )
+    )
+    recall = repo.recall(
+        RecallRequest.model_validate(
+            {
+                "tenant_id": "t_sql",
+                "agent_id": "a_writer",
+                "scope": "global",
+                "query": "expired memory",
+            }
+        )
+    )
+    assert recall.items == []
     repo.close()

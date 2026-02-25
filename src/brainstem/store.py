@@ -54,11 +54,14 @@ class MemoryRecord:
     salience: float
     source_ref: str | None
     created_at: datetime
+    expires_at: datetime | None
     tombstoned: bool = False
 
 
 def _can_read(agent_id: str, requested_scope: Scope, record: MemoryRecord) -> bool:
     if record.tombstoned:
+        return False
+    if record.expires_at is not None and datetime.now(UTC) >= record.expires_at:
         return False
     if record.scope is Scope.GLOBAL:
         return True
@@ -119,7 +122,40 @@ def _to_details(record: MemoryRecord) -> MemoryDetails:
         salience=record.salience,
         source_ref=record.source_ref,
         created_at=record.created_at,
+        expires_at=record.expires_at,
     )
+
+
+def _has_negation(text: str) -> bool:
+    negation_markers = (" not ", " no ", " never ", " cannot ", " can't ", " without ")
+    lowered = f" {text.lower()} "
+    return any(marker in lowered for marker in negation_markers)
+
+
+def _token_set(text: str) -> set[str]:
+    return set(re.findall(r"\w+", text.lower()))
+
+
+def _detect_conflicts(records: list[MemoryRecord]) -> list[str]:
+    conflicts: list[str] = []
+    fact_records = [record for record in records if record.type == "fact"]
+    for left_index, left in enumerate(fact_records):
+        for right in fact_records[left_index + 1 :]:
+            left_tokens = _token_set(left.text)
+            right_tokens = _token_set(right.text)
+            if not left_tokens or not right_tokens:
+                continue
+            overlap = len(left_tokens.intersection(right_tokens)) / len(
+                left_tokens.union(right_tokens)
+            )
+            if overlap < 0.5:
+                continue
+            if _has_negation(left.text) == _has_negation(right.text):
+                continue
+            conflicts.append(
+                f"possible_conflict:{left.memory_id}:{right.memory_id}"
+            )
+    return conflicts
 
 
 def _pack_recall(payload: RecallRequest, candidates: list[MemoryRecord]) -> RecallResponse:
@@ -130,6 +166,7 @@ def _pack_recall(payload: RecallRequest, candidates: list[MemoryRecord]) -> Reca
     )
 
     snippets: list[MemorySnippet] = []
+    selected: list[MemoryRecord] = []
     tokens = 0
     for _, record in scored:
         if len(snippets) >= payload.budget.max_items:
@@ -138,12 +175,13 @@ def _pack_recall(payload: RecallRequest, candidates: list[MemoryRecord]) -> Reca
         if tokens + item_tokens > payload.budget.max_tokens:
             continue
         snippets.append(_to_snippet(record))
+        selected.append(record)
         tokens += item_tokens
 
     return RecallResponse(
         items=snippets,
         composed_tokens_estimate=tokens,
-        conflicts=[],
+        conflicts=_detect_conflicts(selected),
         trace_id=f"rec_{uuid4().hex[:8]}",
     )
 
@@ -187,6 +225,7 @@ class InMemoryRepository:
                     ),
                     source_ref=item.source_ref,
                     created_at=now,
+                    expires_at=item.expires_at,
                 )
                 self._records[memory_id] = record
                 memory_ids.append(memory_id)
@@ -266,6 +305,7 @@ class SQLiteRepository:
                     salience REAL NOT NULL,
                     source_ref TEXT,
                     created_at TEXT NOT NULL,
+                    expires_at TEXT,
                     tombstoned INTEGER NOT NULL DEFAULT 0
                 );
 
@@ -284,6 +324,10 @@ class SQLiteRepository:
                 );
                 """
             )
+            info = self._connection.execute("PRAGMA table_info(memory_items)").fetchall()
+            columns = {str(row["name"]) for row in info}
+            if "expires_at" not in columns:
+                self._connection.execute("ALTER TABLE memory_items ADD COLUMN expires_at TEXT")
 
     @staticmethod
     def _row_to_record(row: sqlite3.Row) -> MemoryRecord:
@@ -299,6 +343,11 @@ class SQLiteRepository:
             salience=float(row["salience"]),
             source_ref=str(row["source_ref"]) if row["source_ref"] is not None else None,
             created_at=datetime.fromisoformat(str(row["created_at"])),
+            expires_at=(
+                datetime.fromisoformat(str(row["expires_at"]))
+                if row["expires_at"] is not None
+                else None
+            ),
             tombstoned=bool(int(row["tombstoned"])),
         )
 
@@ -331,7 +380,8 @@ class SQLiteRepository:
                     INSERT INTO memory_items (
                         memory_id, tenant_id, agent_id, type, scope, text,
                         trust_level, confidence, salience, source_ref, created_at, tombstoned
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+                        , expires_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
                     """,
                     (
                         memory_id,
@@ -353,6 +403,7 @@ class SQLiteRepository:
                         ),
                         item.source_ref,
                         now,
+                        item.expires_at.isoformat() if item.expires_at else None,
                     ),
                 )
 

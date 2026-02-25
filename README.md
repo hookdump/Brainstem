@@ -2,44 +2,35 @@
 
 Brainstem is a shared memory coprocessor for AI agents.
 
-It gives agent systems persistent, auditable, and budget-aware memory across sessions and across multiple cooperating agents.
+It lets multiple agents store, retrieve, and reuse context across sessions with:
 
-## Why this project
+- durable memory storage,
+- scope-aware access (`private`, `team`, `global`),
+- retrieval packing under token budgets,
+- provenance and trust fields on memory items,
+- optional API-key authorization with tenant/role enforcement.
 
-Most agent systems either:
+## Current capabilities (v0)
 
-- overpay by stuffing huge histories into context windows, or
-- lose continuity between sessions.
-
-Brainstem aims to provide a third path:
-
-- structured long-term memory,
-- hybrid retrieval (lexical + semantic),
-- provenance-first context composition,
-- optional trainable reranking/salience modules.
-
-## Current status
-
-`v0 implementation` is underway and already usable:
-
-- FastAPI service skeleton
-- Core memory APIs: `remember`, `recall`, `inspect`, `forget`, `reflect`, `train`
-- In-memory and SQLite repository implementations
-- API-key authn/authz mode with role enforcement (`reader` / `writer` / `admin`)
-- SQLite schema migration baseline
-- Tests and CI baseline
-- Roadmap and architecture specs
-
-## Repository docs
-
-- [BRAIN_ARCHITECTURE.md](./BRAIN_ARCHITECTURE.md)
-- [BRAIN_V0_TECH_SPEC.md](./BRAIN_V0_TECH_SPEC.md)
-- [TODO.md](./TODO.md)
-- [CONTRIBUTING.md](./CONTRIBUTING.md)
+- REST API with endpoints:
+  - `remember`, `recall`, `inspect`, `forget`, `reflect`, `train`
+- Storage backends:
+  - `inmemory` (fast local dev)
+  - `sqlite` (persistent local baseline)
+- Role model:
+  - `reader`, `writer`, `admin`
+- Memory quality baseline:
+  - heuristic salience/confidence
+  - contradiction signaling in recall output
+  - retention support with `expires_at`
+- Tooling:
+  - migration script for SQLite
+  - retrieval benchmark harness (Recall@K, nDCG, token estimate)
+  - CI (`ruff` + `pytest`)
 
 ## Quickstart
 
-### 1) Create environment and install
+### 1) Install
 
 ```bash
 python3 -m venv .venv
@@ -53,19 +44,64 @@ pip install -e ".[dev]"
 brainstem-api
 ```
 
-The service runs on `http://localhost:8080`.
+Service URL: `http://localhost:8080`
 
-### 3) Run tests
+### 3) Run checks
 
 ```bash
+ruff check .
 pytest
 ```
 
-### 4) Try the API
+## Configuration
+
+Brainstem reads runtime config from environment variables:
+
+- `BRAINSTEM_STORE_BACKEND`:
+  - `inmemory` (default)
+  - `sqlite`
+- `BRAINSTEM_SQLITE_PATH`:
+  - SQLite file path, default `brainstem.db`
+- `BRAINSTEM_AUTH_MODE`:
+  - `disabled` (default)
+  - `api_key`
+- `BRAINSTEM_API_KEYS`:
+  - required when `BRAINSTEM_AUTH_MODE=api_key`
+  - JSON object mapping keys to `{tenant_id, agent_id, role}`
+
+Example:
 
 ```bash
-curl -s http://localhost:8080/healthz | jq
+export BRAINSTEM_STORE_BACKEND=sqlite
+export BRAINSTEM_SQLITE_PATH=.data/brainstem.db
+export BRAINSTEM_AUTH_MODE=api_key
+export BRAINSTEM_API_KEYS='{
+  "writer-key": {"tenant_id":"t_demo","agent_id":"a_writer","role":"writer"},
+  "admin-key": {"tenant_id":"t_demo","agent_id":"a_admin","role":"admin"}
+}'
+brainstem-api
 ```
+
+## Endpoint reference
+
+- `GET /healthz`
+- `GET /v0/meta`
+- `POST /v0/memory/remember`
+- `POST /v0/memory/recall`
+- `GET /v0/memory/{memory_id}?tenant_id=...&agent_id=...&scope=...`
+- `DELETE /v0/memory/{memory_id}`
+- `POST /v0/memory/reflect`
+- `POST /v0/memory/train`
+
+When auth mode is `api_key`, include:
+
+```bash
+-H "x-brainstem-api-key: <key>"
+```
+
+## Usage examples
+
+### Remember
 
 ```bash
 curl -s -X POST http://localhost:8080/v0/memory/remember \
@@ -85,85 +121,72 @@ curl -s -X POST http://localhost:8080/v0/memory/remember \
   }' | jq
 ```
 
+### Recall
+
 ```bash
 curl -s -X POST http://localhost:8080/v0/memory/recall \
   -H "content-type: application/json" \
   -d '{
     "tenant_id": "t_demo",
     "agent_id": "a_writer",
+    "scope": "team",
     "query": "What migration constraints were defined?",
-    "scope": "team"
+    "budget": {"max_items": 8, "max_tokens": 1200}
   }' | jq
 ```
 
-### Optional: run with SQLite persistence
+### Inspect
 
 ```bash
-export BRAINSTEM_STORE_BACKEND=sqlite
-export BRAINSTEM_SQLITE_PATH=.data/brainstem.db
-brainstem-api
+curl -s "http://localhost:8080/v0/memory/<memory_id>?tenant_id=t_demo&agent_id=a_writer&scope=team" | jq
 ```
 
-### Optional: enable API key auth
+### Forget
 
 ```bash
-export BRAINSTEM_AUTH_MODE=api_key
-export BRAINSTEM_API_KEYS='{
-  "writer-key": {"tenant_id":"t_demo","agent_id":"a_writer","role":"writer"},
-  "admin-key": {"tenant_id":"t_demo","agent_id":"a_admin","role":"admin"}
-}'
-brainstem-api
+curl -s -X DELETE http://localhost:8080/v0/memory/<memory_id> \
+  -H "content-type: application/json" \
+  -d '{"tenant_id":"t_demo","agent_id":"a_writer"}' | jq
 ```
 
-Then include the header on protected endpoints:
+## Migrations and benchmark tools
 
-```bash
--H "x-brainstem-api-key: writer-key"
-```
-
-### Initialize SQLite DB via migration script
+Initialize SQLite schema:
 
 ```bash
 python scripts/init_sqlite_db.py --db .data/brainstem.db
 ```
 
-### Run retrieval benchmark
+Run retrieval benchmark:
 
 ```bash
 python scripts/benchmark_recall.py --backend inmemory --k 5
 python scripts/benchmark_recall.py --backend sqlite --sqlite-path .data/benchmark.db --k 5
 ```
 
-## Architecture snapshot
+## Repository docs
 
-```text
-Clients (agents)
-  -> Brain Gateway (auth, tenancy, policy)
-  -> Write pipeline (normalize, score, index)
-  -> Memory stores (events/facts/episodes + vector + lexical)
-  -> Retrieval composer (hybrid retrieval + budget packing + provenance)
-```
+- [BRAIN_ARCHITECTURE.md](./BRAIN_ARCHITECTURE.md)
+- [BRAIN_V0_TECH_SPEC.md](./BRAIN_V0_TECH_SPEC.md)
+- [TODO.md](./TODO.md)
+- [CONTRIBUTING.md](./CONTRIBUTING.md)
 
-For details, see `BRAIN_V0_TECH_SPEC.md`.
+## Workflow
 
-## Development workflow
+This repo is managed issue-first:
 
-This project follows an issue-first flow:
+1. create/pick a GitHub issue,
+2. branch from `main`,
+3. implement + test,
+4. open/update PR,
+5. review and merge.
 
-1. Open/assign a GitHub issue.
-2. Create a branch from `main`:
-   - `feat/<issue-number>-short-name`
-   - `fix/<issue-number>-short-name`
-3. Implement with tests.
-4. Open a PR using the PR template.
-5. Merge after CI and review.
+## Roadmap snapshot
 
-## Planned roadmap
-
-- v0.1: in-memory service + API contracts
-- v0.2: PostgreSQL + pgvector backend
-- v0.3: retrieval eval harness and metrics dashboards
-- v0.4: async reflection jobs and trainable reranker
+- `v0.2`: PostgreSQL + pgvector backend
+- `v0.3`: richer benchmark corpus + observability dashboards
+- `v0.4`: async job workers for reflect/train
+- `v0.5`: MCP-native server transport
 
 ## License
 

@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS memory_items (
     salience REAL NOT NULL,
     source_ref TEXT,
     created_at TEXT NOT NULL,
+    expires_at TEXT,
     tombstoned INTEGER NOT NULL DEFAULT 0
 );
 
