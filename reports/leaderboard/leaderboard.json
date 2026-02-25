@@ -1,0 +1,37 @@
+{
+  "schema_version": "2026-02-25",
+  "generated_at": "2026-02-25T07:21:06.812904+00:00",
+  "suites": [
+    {
+      "id": "retrieval_core_v1",
+      "dataset_path": "benchmarks/retrieval_dataset.json",
+      "k": 5,
+      "runs": [
+        {
+          "backend": "inmemory",
+          "k": 5,
+          "dataset_path": "benchmarks/retrieval_dataset.json",
+          "case_count": 10,
+          "seed_count": 8,
+          "metrics": {
+            "recall@5": 1.0,
+            "ndcg@5": 0.8824356157188729,
+            "avg_composed_tokens": 48.9
+          }
+        },
+        {
+          "backend": "sqlite",
+          "k": 5,
+          "dataset_path": "benchmarks/retrieval_dataset.json",
+          "case_count": 10,
+          "seed_count": 8,
+          "metrics": {
+            "recall@5": 1.0,
+            "ndcg@5": 0.8824356157188729,
+            "avg_composed_tokens": 48.9
+          }
+        }
+      ]
+    }
+  ]
+}

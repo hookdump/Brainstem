@@ -32,6 +32,21 @@ jobs:
       - name: Test
         run: pytest
 
+      - name: Generate benchmark leaderboard artifacts
+        run: |
+          brainstem leaderboard \
+            --manifest benchmarks/suite_manifest.json \
+            --output-dir reports/ci-leaderboard \
+            --sqlite-dir .data/ci-leaderboard
+
+      - name: Upload benchmark leaderboard artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-leaderboard
+          path: |
+            reports/ci-leaderboard/leaderboard.json
+            reports/ci-leaderboard/leaderboard.md
+
   postgres-integration:
     runs-on: ubuntu-latest
     services:

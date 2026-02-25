@@ -87,6 +87,25 @@ def test_cli_report_writes_markdown(tmp_path: Path) -> None:
     assert "Brainstem Retrieval Benchmark Report" in output_md.read_text(encoding="utf-8")
 
 
+def test_cli_leaderboard_writes_artifacts(tmp_path: Path) -> None:
+    output_dir = tmp_path / "leaderboard"
+    sqlite_dir = tmp_path / "sqlite"
+    status = cli.main(
+        [
+            "leaderboard",
+            "--manifest",
+            "benchmarks/suite_manifest.json",
+            "--output-dir",
+            str(output_dir),
+            "--sqlite-dir",
+            str(sqlite_dir),
+        ]
+    )
+    assert status == 0
+    assert (output_dir / "leaderboard.json").exists()
+    assert (output_dir / "leaderboard.md").exists()
+
+
 def test_cli_health_success(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:

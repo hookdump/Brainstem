@@ -11,6 +11,7 @@ from urllib.request import urlopen
 
 from brainstem.admin import init_postgres_db, init_sqlite_db
 from brainstem.benchmark import run_benchmark
+from brainstem.leaderboard import write_leaderboard_artifacts
 from brainstem.main import run as run_api
 from brainstem.reporting import generate_benchmark_report
 
@@ -41,6 +42,14 @@ def build_parser() -> argparse.ArgumentParser:
     report.add_argument("--output-md", default="reports/retrieval_benchmark.md")
     report.add_argument("--sqlite-path", default=".data/benchmark-report.db")
     report.add_argument("--k", type=int, default=5)
+
+    leaderboard = subparsers.add_parser(
+        "leaderboard",
+        help="Generate benchmark leaderboard JSON and markdown artifacts",
+    )
+    leaderboard.add_argument("--manifest", default="benchmarks/suite_manifest.json")
+    leaderboard.add_argument("--output-dir", default="reports/leaderboard")
+    leaderboard.add_argument("--sqlite-dir", default=".data/leaderboard")
 
     health = subparsers.add_parser("health", help="Run HTTP health check")
     health.add_argument("--url", default="http://localhost:8080/healthz")
@@ -89,6 +98,16 @@ def main(argv: list[str] | None = None) -> int:
             sqlite_path=args.sqlite_path,
         )
         print(f"Wrote benchmark report to {output}")
+        return 0
+
+    if args.command == "leaderboard":
+        json_path, md_path = write_leaderboard_artifacts(
+            manifest_path=args.manifest,
+            output_dir=args.output_dir,
+            sqlite_dir=args.sqlite_dir,
+        )
+        print(f"Wrote leaderboard JSON to {json_path}")
+        print(f"Wrote leaderboard markdown to {md_path}")
         return 0
 
     if args.command == "health":
