@@ -22,8 +22,9 @@ Status date: February 25, 2026
 
 ## Later
 
-- [ ] Add MCP-native server transport (in addition to REST mirror).
+- [ ] Add MCP-native server transport (in addition to REST mirror). (`#8`)
 - [ ] Add async worker queue for reflection/train jobs. (`#4`)
+- [ ] Add retention cleanup worker for expired memory items. (`#7`)
 - [ ] Add canary model registry for reranker/salience models.
 - [ ] Add optional graph projection for relation-aware retrieval.
 - [ ] Publish reproducible benchmark suite and leaderboard examples.
@@ -41,3 +42,4 @@ Status date: February 25, 2026
 - [x] Added retrieval eval harness (`scripts/benchmark_recall.py`) with tests.
 - [x] Closed GitHub issue `#2` (auth middleware complete for v0).
 - [x] Added TTL-aware retrieval and contradiction signaling in recall.
+- [x] Added new backlog issues for retention cleanup and MCP transport (`#7`, `#8`).
