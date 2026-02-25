@@ -15,6 +15,13 @@ ruff check .
 pytest
 ```
 
+Run MCP end-to-end integration tests (for MCP-related changes):
+
+```bash
+pip install -e ".[dev,mcp]"
+pytest tests/test_mcp_integration_e2e.py -q
+```
+
 ## Branch naming
 
 - `feat/<issue-number>-short-name`
