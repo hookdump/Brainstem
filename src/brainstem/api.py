@@ -1,10 +1,13 @@
 """HTTP API for Brainstem v0."""
 
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
+from time import perf_counter
 from typing import Annotated
 from uuid import uuid4
 
-from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from starlette.responses import Response
 
 from brainstem.auth import AgentRole, AuthContext, AuthManager
 from brainstem.models import (
@@ -20,6 +23,7 @@ from brainstem.models import (
     TrainRequest,
     TrainResponse,
 )
+from brainstem.observability import MetricsStore, RequestMetric, duration_ms
 from brainstem.settings import Settings, load_settings
 from brainstem.store import InMemoryRepository, MemoryRepository, SQLiteRepository
 
@@ -44,12 +48,50 @@ def create_app(
     runtime_settings = settings if settings is not None else load_settings()
     repo = repository if repository is not None else _create_repository(runtime_settings)
     auth = auth_manager if auth_manager is not None else _create_auth_manager(runtime_settings)
+    metrics = MetricsStore()
 
     app = FastAPI(
         title="Brainstem API",
         version="0.2.0",
         description="Shared memory coprocessor for multi-agent systems.",
     )
+
+    def resolve_route_path(request: Request) -> str:
+        route = request.scope.get("route")
+        if route is not None and hasattr(route, "path"):
+            return str(route.path)
+        return request.url.path
+
+    @app.middleware("http")
+    async def observe_requests(
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
+    ) -> Response:
+        start_perf = perf_counter()
+        try:
+            response = await call_next(request)
+            status_code = response.status_code
+        except Exception:
+            status_code = 500
+            metrics.record(
+                RequestMetric(
+                    method=request.method,
+                    path=resolve_route_path(request),
+                    status_code=status_code,
+                    duration_ms=duration_ms(start_perf),
+                )
+            )
+            raise
+
+        metrics.record(
+            RequestMetric(
+                method=request.method,
+                path=resolve_route_path(request),
+                status_code=status_code,
+                duration_ms=duration_ms(start_perf),
+            )
+        )
+        return response
 
     async def get_auth_context(
         x_brainstem_api_key: Annotated[str | None, Header()] = None,
@@ -188,6 +230,19 @@ def create_app(
             "store_backend": runtime_settings.store_backend,
             "auth_mode": runtime_settings.auth_mode,
             "generated_at": datetime.now(UTC).isoformat(),
+        }
+
+    @app.get("/v0/metrics")
+    async def metrics_snapshot(
+        auth_context: Annotated[AuthContext, Depends(get_auth_context)],
+    ) -> dict[str, object]:
+        if not auth_context.bypass and auth_context.role is not AgentRole.ADMIN:
+            raise HTTPException(status_code=403, detail="insufficient_role")
+        return {
+            "service": "brainstem",
+            "store_backend": runtime_settings.store_backend,
+            "auth_mode": runtime_settings.auth_mode,
+            "snapshot": metrics.snapshot(),
         }
 
     return app
