@@ -67,6 +67,7 @@ def test_train_job_registers_canary_version() -> None:
         status = manager.get(job.job_id)
         assert status is not None
         assert status.status is JobStatus.COMPLETED
+        assert status.result is not None
         candidate_version = str(status.result["candidate_version"])
         state = registry.get_state("reranker")
         assert state["canary_version"] == candidate_version

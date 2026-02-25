@@ -10,6 +10,7 @@ from collections.abc import Iterable, Mapping
 from datetime import UTC, datetime
 from pathlib import Path
 from threading import RLock
+from typing import Any
 
 from brainstem.models import MemorySnippet, RecallRequest, RecallResponse
 from brainstem.store import MemoryRepository
@@ -153,7 +154,7 @@ def _decay_multiplier(
     age_hours = max(0.0, (now - updated_at).total_seconds() / 3600.0)
     if half_life_hours <= 0:
         return 1.0
-    return 0.5 ** (age_hours / half_life_hours)
+    return float(0.5 ** (age_hours / half_life_hours))
 
 
 class InMemoryGraphStore:
@@ -496,7 +497,7 @@ class PostgresGraphStore:
         self._relation_weights = _normalize_relation_weights(relation_weights)
         self._init_schema()
 
-    def _connect(self):
+    def _connect(self) -> Any:
         try:
             import psycopg
         except ImportError as exc:  # pragma: no cover - optional dependency
@@ -576,7 +577,7 @@ class PostgresGraphStore:
 
     def _upsert_edge(
         self,
-        cursor,
+        cursor: Any,
         tenant_id: str,
         src: str,
         dst: str,

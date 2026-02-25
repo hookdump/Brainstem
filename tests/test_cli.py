@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import sqlite3
 from pathlib import Path
+from typing import Literal
 from urllib.error import URLError
 
 import pytest
@@ -142,7 +143,7 @@ def test_cli_health_success(
         def __enter__(self) -> _Response:
             return self
 
-        def __exit__(self, exc_type: object, exc: object, tb: object) -> bool:
+        def __exit__(self, exc_type: object, exc: object, tb: object) -> Literal[False]:
             return False
 
         def read(self) -> bytes:

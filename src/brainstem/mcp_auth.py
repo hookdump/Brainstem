@@ -35,9 +35,8 @@ class MCPAuthManager:
         mode: str | None = None,
         tokens_json: str | None = None,
     ) -> MCPAuthManager:
-        auth_mode = MCPAuthMode(
-            (mode or os.getenv("BRAINSTEM_MCP_AUTH_MODE", MCPAuthMode.TOKEN)).lower()
-        )
+        raw_mode = mode if mode is not None else os.getenv("BRAINSTEM_MCP_AUTH_MODE", "token")
+        auth_mode = MCPAuthMode(raw_mode.lower())
         if auth_mode is MCPAuthMode.DISABLED:
             return cls(mode=auth_mode, tokens={})
 

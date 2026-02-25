@@ -44,6 +44,7 @@ Status date: February 25, 2026
 - [x] Add sustained load/performance regression suite (P95 latency + memory growth budgets). (`#42`)
 - [x] Add backup/restore verification playbooks for SQLite/Postgres + model registry. (`#43`)
 - [x] Add release automation (versioning/changelog/tags + PyPI publish workflow). (`#44`)
+- [x] Enforce strict mypy typing across source/tests and CI gate. (`#51`)
 
 ## Done
 
@@ -82,3 +83,4 @@ Status date: February 25, 2026
 - [x] Added sustained performance regression tooling + scheduled workflow artifacts.
 - [x] Added backup/restore scripts + restore verification playbook and smoke tests.
 - [x] Added automated release prep tooling and GitHub release workflow.
+- [x] Added strict mypy type-hardening pass + CI typecheck gate.

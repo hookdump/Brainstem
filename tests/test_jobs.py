@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import time
 
-from brainstem.jobs import JobManager, JobStatus
-from brainstem.models import RecallResponse
+from brainstem.jobs import JobManager, JobRecord, JobStatus
+from brainstem.models import RecallRequest, RecallResponse
 from brainstem.store import InMemoryRepository
 
 
@@ -13,7 +13,7 @@ class FlakyRepository(InMemoryRepository):
         self.fail_times = fail_times
         self.calls = 0
 
-    def recall(self, payload):  # type: ignore[override]
+    def recall(self, payload: RecallRequest) -> RecallResponse:
         self.calls += 1
         if self.calls <= self.fail_times:
             raise RuntimeError("transient failure")
@@ -27,7 +27,7 @@ class FlakyRepository(InMemoryRepository):
         )
 
 
-def _wait(manager: JobManager, job_id: str, timeout_s: float = 2.0):
+def _wait(manager: JobManager, job_id: str, timeout_s: float = 2.0) -> JobRecord:
     end = time.time() + timeout_s
     while time.time() < end:
         job = manager.get(job_id)

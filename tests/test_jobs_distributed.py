@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from brainstem.jobs import JobManager, JobStatus
 from brainstem.store import InMemoryRepository
 
@@ -10,14 +12,14 @@ class FailingCleanupRepository(InMemoryRepository):
         self.fail_times = fail_times
         self.calls = 0
 
-    def purge_expired(self, tenant_id: str, grace_hours: int) -> int:  # type: ignore[override]
+    def purge_expired(self, tenant_id: str, grace_hours: int = 0) -> int:
         self.calls += 1
         if self.calls <= self.fail_times:
             raise RuntimeError("cleanup failed")
         return super().purge_expired(tenant_id=tenant_id, grace_hours=grace_hours)
 
 
-def test_sqlite_job_queue_processes_across_manager_instances(tmp_path) -> None:
+def test_sqlite_job_queue_processes_across_manager_instances(tmp_path: Path) -> None:
     queue_db = tmp_path / "jobs.db"
     repository = InMemoryRepository()
     producer = JobManager(repository=repository, sqlite_path=str(queue_db), start_worker=False)
@@ -41,7 +43,7 @@ def test_sqlite_job_queue_processes_across_manager_instances(tmp_path) -> None:
         worker.close()
 
 
-def test_sqlite_job_queue_persists_retries_and_dead_letters(tmp_path) -> None:
+def test_sqlite_job_queue_persists_retries_and_dead_letters(tmp_path: Path) -> None:
     queue_db = tmp_path / "jobs.db"
     repository = FailingCleanupRepository(fail_times=5)
     producer = JobManager(

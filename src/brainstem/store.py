@@ -15,11 +15,13 @@ from brainstem.models import (
     ForgetResponse,
     MemoryDetails,
     MemorySnippet,
+    MemoryType,
     RecallRequest,
     RecallResponse,
     RememberRequest,
     RememberResponse,
     Scope,
+    TrustLevel,
 )
 from brainstem.service import (
     estimate_tokens,
@@ -102,7 +104,7 @@ def _recall_score(query: str, record: MemoryRecord) -> float:
 def _to_snippet(record: MemoryRecord) -> MemorySnippet:
     return MemorySnippet(
         memory_id=record.memory_id,
-        type=record.type,
+        type=MemoryType(record.type),
         text=record.text,
         confidence=record.confidence,
         salience=record.salience,
@@ -116,10 +118,10 @@ def _to_details(record: MemoryRecord) -> MemoryDetails:
         memory_id=record.memory_id,
         tenant_id=record.tenant_id,
         agent_id=record.agent_id,
-        type=record.type,
+        type=MemoryType(record.type),
         scope=record.scope,
         text=record.text,
-        trust_level=record.trust_level,
+        trust_level=TrustLevel(record.trust_level),
         confidence=record.confidence,
         salience=record.salience,
         source_ref=record.source_ref,

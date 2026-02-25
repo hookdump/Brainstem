@@ -2,11 +2,11 @@
 
 import json
 import logging
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from time import perf_counter
-from typing import Annotated
+from typing import Annotated, TypeVar
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from starlette.responses import Response
@@ -55,6 +55,7 @@ from brainstem.store import InMemoryRepository, MemoryRepository, SQLiteReposito
 from brainstem.store_postgres import PostgresRepository
 
 LOGGER = logging.getLogger("brainstem.api")
+RegistryResult = TypeVar("RegistryResult")
 
 
 def _create_repository(settings: Settings) -> MemoryRepository:
@@ -179,7 +180,7 @@ def create_app(
     metrics = MetricsStore()
 
     @asynccontextmanager
-    async def lifespan(_app: FastAPI):
+    async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         try:
             yield
         finally:
@@ -237,7 +238,11 @@ def create_app(
     ) -> AuthContext:
         return auth.authenticate(x_brainstem_api_key)
 
-    def _registry_or_400(callable_fn, *args, **kwargs):
+    def _registry_or_400(
+        callable_fn: Callable[..., RegistryResult],
+        *args: object,
+        **kwargs: object,
+    ) -> RegistryResult:
         try:
             return callable_fn(*args, **kwargs)
         except ValueError as exc:

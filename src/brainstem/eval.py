@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import math
 from statistics import mean
-from typing import TypedDict
+from typing import Protocol, TypedDict
 
-from brainstem.models import RecallRequest, Scope
-from brainstem.store import MemoryRepository
+from brainstem.models import RecallRequest, RecallResponse, Scope
+
+
+class RecallRepository(Protocol):
+    def recall(self, payload: RecallRequest) -> RecallResponse: ...
 
 
 class EvalCase(TypedDict):
@@ -53,7 +56,7 @@ def ndcg_at_k(found_ids: list[str], expected_ids: list[str], k: int) -> float:
 
 
 def run_retrieval_eval(
-    repository: MemoryRepository,
+    repository: RecallRepository,
     tenant_id: str,
     agent_id: str,
     cases: list[EvalCase],
@@ -70,7 +73,7 @@ def run_retrieval_eval(
 
 
 def run_retrieval_eval_detailed(
-    repository: MemoryRepository,
+    repository: RecallRepository,
     tenant_id: str,
     agent_id: str,
     cases: list[EvalCase],

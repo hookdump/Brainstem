@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import json
 import sys
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import anyio
 import pytest
@@ -30,7 +31,7 @@ async def _mcp_session(
     *,
     auth_mode: str = "token",
     tokens: dict[str, dict[str, str]] | None = DEFAULT_TOKENS,
-):
+) -> AsyncIterator[ClientSession]:
     env = {"BRAINSTEM_MCP_AUTH_MODE": auth_mode}
     if tokens is not None:
         env["BRAINSTEM_MCP_TOKENS"] = json.dumps(tokens)
@@ -65,7 +66,10 @@ def _result_text(result: CallToolResult) -> str:
 
 
 def _result_json(result: CallToolResult) -> dict[str, Any]:
-    return json.loads(_result_text(result))
+    payload = json.loads(_result_text(result))
+    if not isinstance(payload, dict):
+        raise AssertionError("expected JSON object payload")
+    return cast(dict[str, Any], payload)
 
 
 def test_mcp_e2e_list_tools_and_memory_flow() -> None:
