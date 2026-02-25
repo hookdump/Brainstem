@@ -17,6 +17,7 @@ from brainstem.graph import (
     InMemoryGraphStore,
     PostgresGraphStore,
     SQLiteGraphStore,
+    parse_relation_weights_json,
 )
 from brainstem.jobs import JobManager
 from brainstem.model_registry import (
@@ -99,16 +100,28 @@ def _create_graph_store(
 ) -> InMemoryGraphStore | SQLiteGraphStore | PostgresGraphStore | None:
     if not settings.graph_enabled:
         return None
+    relation_weights = parse_relation_weights_json(settings.graph_relation_weights_json)
     if settings.store_backend == "inmemory":
-        return InMemoryGraphStore()
+        return InMemoryGraphStore(
+            half_life_hours=settings.graph_half_life_hours,
+            relation_weights=relation_weights,
+        )
     if settings.store_backend == "sqlite":
-        return SQLiteGraphStore(settings.sqlite_path)
+        return SQLiteGraphStore(
+            settings.sqlite_path,
+            half_life_hours=settings.graph_half_life_hours,
+            relation_weights=relation_weights,
+        )
     if settings.store_backend == "postgres":
         if not settings.postgres_dsn:
             raise ValueError(
                 "BRAINSTEM_POSTGRES_DSN is required when BRAINSTEM_STORE_BACKEND=postgres"
             )
-        return PostgresGraphStore(settings.postgres_dsn)
+        return PostgresGraphStore(
+            settings.postgres_dsn,
+            half_life_hours=settings.graph_half_life_hours,
+            relation_weights=relation_weights,
+        )
     raise ValueError(f"unsupported BRAINSTEM_STORE_BACKEND: {settings.store_backend}")
 
 
@@ -580,6 +593,7 @@ def create_app(
             "store_backend": runtime_settings.store_backend,
             "auth_mode": runtime_settings.auth_mode,
             "graph_enabled": str(runtime_settings.graph_enabled).lower(),
+            "graph_half_life_hours": str(runtime_settings.graph_half_life_hours),
             "model_registry_backend": runtime_settings.model_registry_backend,
             "generated_at": datetime.now(UTC).isoformat(),
         }
@@ -595,6 +609,7 @@ def create_app(
             "store_backend": runtime_settings.store_backend,
             "auth_mode": runtime_settings.auth_mode,
             "graph_enabled": runtime_settings.graph_enabled,
+            "graph_half_life_hours": runtime_settings.graph_half_life_hours,
             "model_registry_backend": runtime_settings.model_registry_backend,
             "snapshot": metrics.snapshot(),
         }

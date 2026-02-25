@@ -18,6 +18,8 @@ class Settings:
     job_worker_enabled: bool
     graph_enabled: bool
     graph_max_expansion: int
+    graph_half_life_hours: float
+    graph_relation_weights_json: str | None
     model_registry_backend: str
     model_registry_sqlite_path: str
     model_registry_signal_window: int
@@ -47,6 +49,10 @@ def load_settings() -> Settings:
         job_worker_enabled=_env_bool("BRAINSTEM_JOB_WORKER_ENABLED", True),
         graph_enabled=_env_bool("BRAINSTEM_GRAPH_ENABLED", False),
         graph_max_expansion=max(0, int(os.getenv("BRAINSTEM_GRAPH_MAX_EXPANSION", "4"))),
+        graph_half_life_hours=max(
+            1.0, float(os.getenv("BRAINSTEM_GRAPH_HALF_LIFE_HOURS", "168"))
+        ),
+        graph_relation_weights_json=os.getenv("BRAINSTEM_GRAPH_RELATION_WEIGHTS"),
         model_registry_backend=os.getenv("BRAINSTEM_MODEL_REGISTRY_BACKEND", "inmemory").lower(),
         model_registry_sqlite_path=os.getenv(
             "BRAINSTEM_MODEL_REGISTRY_SQLITE_PATH", ".data/model_registry.db"

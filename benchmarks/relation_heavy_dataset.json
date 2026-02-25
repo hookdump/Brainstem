@@ -1,0 +1,100 @@
+{
+  "tenant_id": "bench_relation_tenant",
+  "agent_id": "bench_relation_agent",
+  "seeds": [
+    {
+      "id": "cluster_anchor",
+      "type": "fact",
+      "text": "Cluster alpha outage response references playbook code PB-447.",
+      "scope": "team",
+      "trust_level": "trusted_tool"
+    },
+    {
+      "id": "cluster_detail",
+      "type": "policy",
+      "text": "PB-447 requires traffic drain and staged restart across gateway tier.",
+      "scope": "team",
+      "trust_level": "trusted_tool"
+    },
+    {
+      "id": "compliance_anchor",
+      "type": "fact",
+      "text": "Regulation pack RC-22 maps to retention profile RD-91.",
+      "scope": "team",
+      "trust_level": "trusted_tool"
+    },
+    {
+      "id": "compliance_detail",
+      "type": "policy",
+      "text": "RD-91 enforces 400-day retention and legal hold exports.",
+      "scope": "team",
+      "trust_level": "trusted_tool"
+    },
+    {
+      "id": "paging_anchor",
+      "type": "fact",
+      "text": "Pager policy uses rota profile ROTA-X9 for overnight incidents.",
+      "scope": "team",
+      "trust_level": "trusted_tool"
+    },
+    {
+      "id": "paging_detail",
+      "type": "policy",
+      "text": "ROTA-X9 escalation path starts at #infra-oncall then SRE manager.",
+      "scope": "team",
+      "trust_level": "trusted_tool"
+    },
+    {
+      "id": "billing_anchor",
+      "type": "fact",
+      "text": "Cost anomaly workflow references analyzer profile A-77.",
+      "scope": "team",
+      "trust_level": "trusted_tool"
+    },
+    {
+      "id": "billing_detail",
+      "type": "policy",
+      "text": "A-77 raises severity-high when spend delta exceeds 18 percent.",
+      "scope": "team",
+      "trust_level": "trusted_tool"
+    }
+  ],
+  "cases": [
+    {
+      "name": "cluster_recovery_steps",
+      "query": "What recovery procedure applies to cluster alpha outage response?",
+      "expected_seed_ids": ["cluster_detail"],
+      "tags": ["relation", "single_hop"]
+    },
+    {
+      "name": "regulation_requirements",
+      "query": "What does regulation pack RC-22 require?",
+      "expected_seed_ids": ["compliance_detail"],
+      "tags": ["relation", "single_hop"]
+    },
+    {
+      "name": "overnight_paging_path",
+      "query": "Where does overnight paging route for the rota profile?",
+      "expected_seed_ids": ["paging_detail"],
+      "tags": ["relation", "single_hop"]
+    },
+    {
+      "name": "anomaly_threshold",
+      "query": "Which threshold is used in the anomaly workflow profile?",
+      "expected_seed_ids": ["billing_detail"],
+      "tags": ["relation", "single_hop"]
+    },
+    {
+      "name": "cluster_and_paging",
+      "query": "Summarize cluster outage response and overnight paging escalation.",
+      "expected_seed_ids": ["cluster_detail", "paging_detail"],
+      "tags": ["relation", "multi_hop"]
+    },
+    {
+      "name": "compliance_and_billing",
+      "query": "Summarize RC-22 obligations and anomaly profile guardrails.",
+      "expected_seed_ids": ["compliance_detail", "billing_detail"],
+      "tags": ["relation", "multi_hop"]
+    }
+  ]
+}

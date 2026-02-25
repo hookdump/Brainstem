@@ -19,6 +19,7 @@ Status date: February 25, 2026
 - [x] Add baseline conflict tracking for contradictory facts in recall responses.
 - [x] Add retention/TTL workflow support (`expires_at`) in memory ingestion and recall filtering.
 - [x] Expand benchmark dataset and publish reproducible benchmark report. (`#3`)
+- [ ] Add end-to-end MCP integration test harness. (`#37`)
 
 ## Later
 
@@ -35,6 +36,7 @@ Status date: February 25, 2026
 - [x] Add optional graph projection for relation-aware retrieval. (`#29`)
 - [x] Publish reproducible benchmark suite and leaderboard examples. (`#30`)
 - [x] Persist model registry state with audit history. (`#35`)
+- [x] Improve graph relation extraction, scoring, and dashboard reporting. (`#36`)
 
 ## Done
 

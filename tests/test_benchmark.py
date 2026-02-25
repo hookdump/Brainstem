@@ -14,6 +14,12 @@ def test_load_benchmark_dataset() -> None:
     assert len(dataset["cases"]) >= 10
 
 
+def test_load_relation_dataset_has_tags() -> None:
+    dataset = load_benchmark_dataset("benchmarks/relation_heavy_dataset.json")
+    tags = dataset["cases"][0].get("tags", [])
+    assert "relation" in tags
+
+
 def test_run_benchmark_inmemory() -> None:
     output = run_benchmark(
         dataset_path="benchmarks/retrieval_dataset.json",
@@ -41,6 +47,27 @@ def test_run_benchmark_with_graph_enabled(tmp_path: Path) -> None:
     assert output["graph_enabled"] is True
 
 
+def test_relation_benchmark_graph_improves_recall(tmp_path: Path) -> None:
+    off = run_benchmark(
+        dataset_path="benchmarks/relation_heavy_dataset.json",
+        backend="sqlite",
+        sqlite_path=str(tmp_path / "relation-off.db"),
+        k=4,
+        graph_enabled=False,
+    )
+    on = run_benchmark(
+        dataset_path="benchmarks/relation_heavy_dataset.json",
+        backend="sqlite",
+        sqlite_path=str(tmp_path / "relation-on.db"),
+        k=4,
+        graph_enabled=True,
+        graph_max_expansion=4,
+    )
+    assert on["metrics"]["recall@4"] >= off["metrics"]["recall@4"]
+    assert "relation" in on["slice_metrics"]
+    assert "multi_hop" in on["slice_metrics"]
+
+
 def test_generate_benchmark_report_script(tmp_path: Path) -> None:
     report_path = tmp_path / "report.md"
     subprocess.run(
@@ -62,6 +89,27 @@ def test_generate_benchmark_report_script(tmp_path: Path) -> None:
     assert "Brainstem Retrieval Benchmark Report" in content
     assert "| Backend | Graph Mode | Recall@K | nDCG@K | Avg Composed Tokens |" in content
     assert "## Graph Impact" in content
+
+
+def test_generate_relation_benchmark_report_includes_slice_metrics(tmp_path: Path) -> None:
+    report_path = tmp_path / "relation-report.md"
+    subprocess.run(
+        [
+            sys.executable,
+            "scripts/generate_benchmark_report.py",
+            "--dataset",
+            "benchmarks/relation_heavy_dataset.json",
+            "--output-md",
+            str(report_path),
+            "--k",
+            "4",
+            "--sqlite-path",
+            str(tmp_path / "relation-bench.db"),
+        ],
+        check=True,
+    )
+    content = report_path.read_text(encoding="utf-8")
+    assert "## Relation Slice Metrics (inmemory, graph on)" in content
 
 
 def test_generate_leaderboard_script(tmp_path: Path) -> None:

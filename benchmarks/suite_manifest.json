@@ -5,7 +5,18 @@
       "id": "retrieval_core_v1",
       "dataset_path": "benchmarks/retrieval_dataset.json",
       "k": 5,
-      "backends": ["inmemory", "sqlite"]
+      "backends": ["inmemory", "sqlite"],
+      "graph_modes": ["off", "on"]
+    },
+    {
+      "id": "relation_graph_v1",
+      "dataset_path": "benchmarks/relation_heavy_dataset.json",
+      "k": 4,
+      "backends": ["inmemory", "sqlite"],
+      "graph_modes": ["off", "on"],
+      "focus_tags": ["relation", "multi_hop"],
+      "graph_max_expansion": 4,
+      "graph_half_life_hours": 168
     }
   ]
 }

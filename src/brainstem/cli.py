@@ -11,9 +11,17 @@ from urllib.request import urlopen
 
 from brainstem.admin import init_postgres_db, init_sqlite_db
 from brainstem.benchmark import run_benchmark
+from brainstem.graph import parse_relation_weights_json
 from brainstem.leaderboard import write_leaderboard_artifacts
 from brainstem.main import run as run_api
 from brainstem.reporting import generate_benchmark_report
+
+
+def _parse_relation_weights_arg(raw: str) -> dict[str, float] | None:
+    try:
+        return parse_relation_weights_json(raw)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(str(exc)) from exc
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -38,12 +46,25 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark.add_argument("--output-json", default="")
     benchmark.add_argument("--graph-enabled", action="store_true")
     benchmark.add_argument("--graph-max-expansion", type=int, default=4)
+    benchmark.add_argument("--graph-half-life-hours", type=float, default=168.0)
+    benchmark.add_argument(
+        "--graph-relation-weights",
+        default="",
+        help='JSON object override, e.g. \'{"reference": 2.0}\'',
+    )
 
     report = subparsers.add_parser("report", help="Generate benchmark markdown report")
     report.add_argument("--dataset", default="benchmarks/retrieval_dataset.json")
     report.add_argument("--output-md", default="reports/retrieval_benchmark.md")
     report.add_argument("--sqlite-path", default=".data/benchmark-report.db")
     report.add_argument("--k", type=int, default=5)
+    report.add_argument("--graph-max-expansion", type=int, default=4)
+    report.add_argument("--graph-half-life-hours", type=float, default=168.0)
+    report.add_argument(
+        "--graph-relation-weights",
+        default="",
+        help='JSON object override, e.g. \'{"reference": 2.0}\'',
+    )
 
     leaderboard = subparsers.add_parser(
         "leaderboard",
@@ -78,6 +99,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "benchmark":
+        relation_weights = _parse_relation_weights_arg(args.graph_relation_weights)
         result = run_benchmark(
             dataset_path=args.dataset,
             backend=args.backend,
@@ -85,6 +107,8 @@ def main(argv: list[str] | None = None) -> int:
             k=args.k,
             graph_enabled=args.graph_enabled,
             graph_max_expansion=args.graph_max_expansion,
+            graph_half_life_hours=args.graph_half_life_hours,
+            graph_relation_weights=relation_weights,
         )
         if args.output_json:
             output = Path(args.output_json)
@@ -95,11 +119,15 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "report":
+        relation_weights = _parse_relation_weights_arg(args.graph_relation_weights)
         output = generate_benchmark_report(
             dataset=args.dataset,
             output_md=args.output_md,
             k=args.k,
             sqlite_path=args.sqlite_path,
+            graph_max_expansion=args.graph_max_expansion,
+            graph_half_life_hours=args.graph_half_life_hours,
+            graph_relation_weights=relation_weights,
         )
         print(f"Wrote benchmark report to {output}")
         return 0
