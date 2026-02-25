@@ -35,6 +35,11 @@ services:
       BRAINSTEM_POSTGRES_DSN: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-brainstem}
       BRAINSTEM_AUTH_MODE: ${BRAINSTEM_AUTH_MODE:-disabled}
       BRAINSTEM_API_KEYS: ${BRAINSTEM_API_KEYS:-}
+      BRAINSTEM_JOB_BACKEND: sqlite
+      BRAINSTEM_JOB_SQLITE_PATH: /var/lib/brainstem/jobs.db
+      BRAINSTEM_JOB_WORKER_ENABLED: "false"
+    volumes:
+      - brainstem_jobdata:/var/lib/brainstem
     ports:
       - "${BRAINSTEM_API_PORT:-8080}:8080"
     healthcheck:
@@ -43,5 +48,23 @@ services:
       timeout: 5s
       retries: 20
 
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: brainstem-worker
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["python", "scripts/job_worker.py"]
+    environment:
+      BRAINSTEM_STORE_BACKEND: postgres
+      BRAINSTEM_POSTGRES_DSN: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-brainstem}
+      BRAINSTEM_JOB_BACKEND: sqlite
+      BRAINSTEM_JOB_SQLITE_PATH: /var/lib/brainstem/jobs.db
+    volumes:
+      - brainstem_jobdata:/var/lib/brainstem
+
 volumes:
   brainstem_pgdata:
+  brainstem_jobdata:

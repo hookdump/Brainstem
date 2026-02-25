@@ -3,6 +3,7 @@
 import json
 import logging
 from collections.abc import Awaitable, Callable
+from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from time import perf_counter
 from typing import Annotated
@@ -54,6 +55,18 @@ def _create_auth_manager(settings: Settings) -> AuthManager:
     return AuthManager.from_json(settings.auth_mode, settings.api_keys_json)
 
 
+def _create_job_manager(settings: Settings, repository: MemoryRepository) -> JobManager:
+    if settings.job_backend == "inprocess":
+        return JobManager(repository=repository)
+    if settings.job_backend == "sqlite":
+        return JobManager(
+            repository=repository,
+            sqlite_path=settings.job_sqlite_path,
+            start_worker=settings.job_worker_enabled,
+        )
+    raise ValueError(f"unsupported BRAINSTEM_JOB_BACKEND: {settings.job_backend}")
+
+
 def create_app(
     repository: MemoryRepository | None = None,
     settings: Settings | None = None,
@@ -62,13 +75,21 @@ def create_app(
     runtime_settings = settings if settings is not None else load_settings()
     repo = repository if repository is not None else _create_repository(runtime_settings)
     auth = auth_manager if auth_manager is not None else _create_auth_manager(runtime_settings)
-    jobs = JobManager(repo)
+    jobs = _create_job_manager(runtime_settings, repo)
     metrics = MetricsStore()
+
+    @asynccontextmanager
+    async def lifespan(_app: FastAPI):
+        try:
+            yield
+        finally:
+            jobs.close()
 
     app = FastAPI(
         title="Brainstem API",
         version="0.2.0",
         description="Shared memory coprocessor for multi-agent systems.",
+        lifespan=lifespan,
     )
 
     def resolve_route_path(request: Request) -> str:
