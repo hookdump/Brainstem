@@ -31,3 +31,40 @@ jobs:
 
       - name: Test
         run: pytest
+
+  postgres-integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: brainstem
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d brainstem"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      BRAINSTEM_TEST_POSTGRES_DSN: postgresql://postgres:postgres@localhost:5432/brainstem
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,postgres]"
+
+      - name: Run Postgres integration tests
+        run: pytest tests/test_postgres_integration.py -q
