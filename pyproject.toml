@@ -24,6 +24,9 @@ dev = [
 postgres = [
   "psycopg[binary]>=3.2.0,<4.0.0",
 ]
+mcp = [
+  "mcp>=1.0.0,<2.0.0",
+]
 
 [project.scripts]
 brainstem-api = "brainstem.main:run"
