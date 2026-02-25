@@ -7,7 +7,7 @@ Status date: February 25, 2026
 - [x] Bootstrap repository docs (`README`, architecture, v0 spec).
 - [x] Implement v0 API skeleton with memory endpoints.
 - [x] Add initial tests and CI baseline.
-- [ ] Replace in-memory store with PostgreSQL + pgvector backend. (`#1`)
+- [ ] Replace in-memory store with PostgreSQL + pgvector backend. (`#1`, scaffold added)
 - [x] Add authn/authz middleware for tenant and scope enforcement. (`#2`)
 - [ ] Add retrieval metrics and tracing instrumentation. (`#5`, request metrics baseline done)
 
@@ -44,3 +44,4 @@ Status date: February 25, 2026
 - [x] Added TTL-aware retrieval and contradiction signaling in recall.
 - [x] Added new backlog issues for retention cleanup and MCP transport (`#7`, `#8`).
 - [x] Added observability baseline (`/v0/metrics` counters + latency summaries) with tests.
+- [x] Added Postgres backend scaffold + pgvector migration baseline.

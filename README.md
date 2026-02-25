@@ -17,6 +17,7 @@ It lets multiple agents store, retrieve, and reuse context across sessions with:
 - Storage backends:
   - `inmemory` (fast local dev)
   - `sqlite` (persistent local baseline)
+  - `postgres` (pgvector-ready scaffold)
 - Role model:
   - `reader`, `writer`, `admin`
 - Memory quality baseline:
@@ -63,8 +64,11 @@ Brainstem reads runtime config from environment variables:
 - `BRAINSTEM_STORE_BACKEND`:
   - `inmemory` (default)
   - `sqlite`
+  - `postgres`
 - `BRAINSTEM_SQLITE_PATH`:
   - SQLite file path, default `brainstem.db`
+- `BRAINSTEM_POSTGRES_DSN`:
+  - required when backend is `postgres`
 - `BRAINSTEM_AUTH_MODE`:
   - `disabled` (default)
   - `api_key`
@@ -82,6 +86,15 @@ export BRAINSTEM_API_KEYS='{
   "writer-key": {"tenant_id":"t_demo","agent_id":"a_writer","role":"writer"},
   "admin-key": {"tenant_id":"t_demo","agent_id":"a_admin","role":"admin"}
 }'
+brainstem-api
+```
+
+For PostgreSQL:
+
+```bash
+pip install -e ".[dev,postgres]"
+export BRAINSTEM_STORE_BACKEND=postgres
+export BRAINSTEM_POSTGRES_DSN="postgresql://postgres:postgres@localhost:5432/brainstem"
 brainstem-api
 ```
 
@@ -159,6 +172,12 @@ Initialize SQLite schema:
 
 ```bash
 python scripts/init_sqlite_db.py --db .data/brainstem.db
+```
+
+Initialize PostgreSQL schema:
+
+```bash
+./scripts/init_postgres_db.sh "postgresql://postgres:postgres@localhost:5432/brainstem"
 ```
 
 Run retrieval benchmark:

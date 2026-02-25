@@ -26,6 +26,7 @@ from brainstem.models import (
 from brainstem.observability import MetricsStore, RequestMetric, duration_ms
 from brainstem.settings import Settings, load_settings
 from brainstem.store import InMemoryRepository, MemoryRepository, SQLiteRepository
+from brainstem.store_postgres import PostgresRepository
 
 
 def _create_repository(settings: Settings) -> MemoryRepository:
@@ -33,6 +34,12 @@ def _create_repository(settings: Settings) -> MemoryRepository:
         return InMemoryRepository()
     if settings.store_backend == "sqlite":
         return SQLiteRepository(settings.sqlite_path)
+    if settings.store_backend == "postgres":
+        if not settings.postgres_dsn:
+            raise ValueError(
+                "BRAINSTEM_POSTGRES_DSN is required when BRAINSTEM_STORE_BACKEND=postgres"
+            )
+        return PostgresRepository(settings.postgres_dsn)
     raise ValueError(f"unsupported BRAINSTEM_STORE_BACKEND: {settings.store_backend}")
 
 
