@@ -24,6 +24,7 @@ class MetricsStore:
         self._status_counts: dict[str, int] = defaultdict(int)
         self._route_counts: dict[str, int] = defaultdict(int)
         self._route_latencies: dict[str, list[float]] = defaultdict(list)
+        self._pipeline_latencies: dict[str, list[float]] = defaultdict(list)
 
     def record(self, metric: RequestMetric) -> None:
         key = f"{metric.method} {metric.path}"
@@ -33,6 +34,10 @@ class MetricsStore:
             self._status_counts[status_bucket] += 1
             self._route_counts[key] += 1
             self._route_latencies[key].append(metric.duration_ms)
+
+    def record_pipeline_timing(self, stage: str, timing_ms: float) -> None:
+        with self._lock:
+            self._pipeline_latencies[stage].append(timing_ms)
 
     def snapshot(self) -> dict[str, object]:
         with self._lock:
@@ -45,11 +50,21 @@ class MetricsStore:
                 for route, values in self._route_latencies.items()
                 if values
             }
+            pipeline_summary = {
+                stage: {
+                    "count": len(values),
+                    "avg_ms": round(mean(values), 2),
+                    "max_ms": round(max(values), 2),
+                }
+                for stage, values in self._pipeline_latencies.items()
+                if values
+            }
             return {
                 "request_count": self._request_count,
                 "status_counts": dict(self._status_counts),
                 "route_counts": dict(self._route_counts),
                 "route_latency_ms": latency_summary,
+                "pipeline_latency_ms": pipeline_summary,
             }
 
 
