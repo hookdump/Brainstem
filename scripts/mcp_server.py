@@ -41,6 +41,11 @@ def brain_recall(payload: dict[str, Any]) -> dict[str, Any]:
     return service.recall(payload)
 
 
+@mcp.tool(name="brain.compact")
+def brain_compact(payload: dict[str, Any]) -> dict[str, Any]:
+    return service.compact(payload)
+
+
 @mcp.tool(name="brain.inspect")
 def brain_inspect(payload: dict[str, Any]) -> dict[str, Any]:
     return service.inspect(payload)

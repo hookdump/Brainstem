@@ -96,6 +96,30 @@ class RecallResponse(BaseModel):
     model_route: str | None = None
 
 
+class CompactRequest(BaseModel):
+    tenant_id: str = Field(min_length=1, max_length=128)
+    agent_id: str = Field(min_length=1, max_length=128)
+    query: str = Field(min_length=1, max_length=1024)
+    scope: Scope = Scope.PRIVATE
+    max_source_items: int = Field(default=16, ge=1, le=100)
+    input_max_tokens: int = Field(default=4000, ge=128, le=64000)
+    target_tokens: int = Field(default=600, ge=64, le=8000)
+    output_type: MemoryType = MemoryType.EPISODE
+    source_ref: str | None = Field(default=None, max_length=512)
+    expires_at: datetime | None = None
+
+
+class CompactResponse(BaseModel):
+    created_memory_id: str | None
+    source_memory_ids: list[str]
+    source_count: int
+    input_tokens_estimate: int
+    output_tokens_estimate: int
+    reduction_ratio: float
+    summary_text: str
+    warnings: list[str]
+
+
 class ReflectRequest(BaseModel):
     tenant_id: str = Field(min_length=1, max_length=128)
     agent_id: str = Field(min_length=1, max_length=128)

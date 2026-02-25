@@ -12,6 +12,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from starlette.responses import Response
 
 from brainstem.auth import AgentRole, AuthContext, AuthManager
+from brainstem.compaction import compact_context
 from brainstem.graph import (
     GraphAugmentedRepository,
     InMemoryGraphStore,
@@ -29,6 +30,8 @@ from brainstem.model_registry import (
 from brainstem.models import (
     CleanupRequest,
     CleanupResponse,
+    CompactRequest,
+    CompactResponse,
     ForgetRequest,
     ForgetResponse,
     JobStatusResponse,
@@ -315,6 +318,31 @@ def create_app(
                 sort_keys=True,
             ),
         )
+        return response
+
+    @app.post("/v0/memory/compact", response_model=CompactResponse)
+    async def compact(
+        payload: CompactRequest,
+        auth_context: Annotated[AuthContext, Depends(get_auth_context)],
+    ) -> CompactResponse:
+        auth.authorize(
+            context=auth_context,
+            tenant_id=payload.tenant_id,
+            agent_id=payload.agent_id,
+            minimum_role=AgentRole.WRITER,
+            scope=payload.scope,
+        )
+        response = compact_context(repository=repo, payload=payload)
+        if (
+            graph_store is not None
+            and response.created_memory_id is not None
+            and response.summary_text
+        ):
+            graph_store.project_memory(
+                tenant_id=payload.tenant_id,
+                memory_id=response.created_memory_id,
+                text=response.summary_text,
+            )
         return response
 
     @app.get("/v0/memory/{memory_id}")

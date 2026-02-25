@@ -13,7 +13,7 @@ It lets multiple agents store, retrieve, and reuse context across sessions with:
 ## Current capabilities (v0)
 
 - REST API with endpoints:
-  - `remember`, `recall`, `inspect`, `forget`, `reflect`, `train`
+  - `remember`, `recall`, `compact`, `inspect`, `forget`, `reflect`, `train`
 - Storage backends:
   - `inmemory` (fast local dev)
   - `sqlite` (persistent local baseline)
@@ -245,6 +245,7 @@ python scripts/job_worker.py --once
 - `GET /v0/metrics`
 - `POST /v0/memory/remember`
 - `POST /v0/memory/recall`
+- `POST /v0/memory/compact`
 - `GET /v0/memory/{memory_id}?tenant_id=...&agent_id=...&scope=...`
 - `DELETE /v0/memory/{memory_id}`
 - `POST /v0/memory/reflect`
@@ -304,6 +305,23 @@ curl -s -X POST http://localhost:8080/v0/memory/recall \
 Recall responses include routed model metadata:
 - `model_version`
 - `model_route` (`active`, `canary_percent`, or `canary_allowlist`)
+
+### Compact context (sync)
+
+```bash
+curl -s -X POST http://localhost:8080/v0/memory/compact \
+  -H "content-type: application/json" \
+  -d '{
+    "tenant_id": "t_demo",
+    "agent_id": "a_writer",
+    "scope": "team",
+    "query": "Summarize migration and rollout constraints",
+    "max_source_items": 16,
+    "input_max_tokens": 4000,
+    "target_tokens": 600,
+    "output_type": "episode"
+  }' | jq
+```
 
 ### Inspect
 

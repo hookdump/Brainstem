@@ -5,11 +5,13 @@ from __future__ import annotations
 from typing import Any
 
 from brainstem.auth import AgentRole, AuthContext, role_rank
+from brainstem.compaction import compact_context
 from brainstem.jobs import JobManager
 from brainstem.mcp_auth import MCPAuthManager
 from brainstem.model_registry import ModelRegistry
 from brainstem.models import (
     CleanupRequest,
+    CompactRequest,
     ForgetRequest,
     RecallRequest,
     ReflectRequest,
@@ -108,6 +110,15 @@ class MCPToolService:
         response.model_version = model_version
         response.model_route = model_route
         return response.model_dump()
+
+    def compact(self, payload: dict[str, Any]) -> dict[str, Any]:
+        normalized, _ = self._authorize(
+            payload,
+            minimum_role=AgentRole.WRITER,
+            require_agent=True,
+        )
+        request = CompactRequest.model_validate(normalized)
+        return compact_context(repository=self.repository, payload=request).model_dump()
 
     def inspect(self, payload: dict[str, Any]) -> dict[str, Any]:
         normalized, _ = self._authorize(
