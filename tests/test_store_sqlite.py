@@ -143,3 +143,22 @@ def test_sqlite_expired_memory_not_recalled(tmp_path: Path) -> None:
     )
     assert recall.items == []
     repo.close()
+
+
+def test_sqlite_purge_expired_returns_count(tmp_path: Path) -> None:
+    db_path = tmp_path / "brainstem-purge.db"
+    repo = SQLiteRepository(str(db_path))
+    past = (datetime.now(UTC) - timedelta(hours=1)).isoformat()
+    repo.remember(
+        RememberRequest.model_validate(
+            {
+                "tenant_id": "t_sql",
+                "agent_id": "a_writer",
+                "scope": "team",
+                "items": [{"type": "fact", "text": "expired for purge", "expires_at": past}],
+            }
+        )
+    )
+    purged = repo.purge_expired(tenant_id="t_sql", grace_hours=0)
+    assert purged >= 1
+    repo.close()

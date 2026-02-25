@@ -22,6 +22,7 @@ It lets multiple agents store, retrieve, and reuse context across sessions with:
   - `reader`, `writer`, `admin`
 - Async job pipeline:
   - queued background execution for `reflect` and `train`
+  - queued retention cleanup jobs
   - status polling via job endpoint
 - Memory quality baseline:
   - heuristic salience/confidence
@@ -113,6 +114,7 @@ brainstem-api
 - `DELETE /v0/memory/{memory_id}`
 - `POST /v0/memory/reflect`
 - `POST /v0/memory/train`
+- `POST /v0/memory/cleanup`
 - `GET /v0/jobs/{job_id}?tenant_id=...&agent_id=...`
 
 When auth mode is `api_key`, include:
@@ -183,6 +185,14 @@ Use the returned `job_id`:
 
 ```bash
 curl -s "http://localhost:8080/v0/jobs/<job_id>?tenant_id=t_demo&agent_id=a_writer" | jq
+```
+
+### Cleanup expired memory (async)
+
+```bash
+curl -s -X POST http://localhost:8080/v0/memory/cleanup \
+  -H "content-type: application/json" \
+  -d '{"tenant_id":"t_demo","grace_hours":0}' | jq
 ```
 
 ## Migrations and benchmark tools

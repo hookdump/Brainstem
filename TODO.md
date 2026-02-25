@@ -24,7 +24,7 @@ Status date: February 25, 2026
 
 - [ ] Add MCP-native server transport (in addition to REST mirror). (`#7`)
 - [x] Add async worker queue for reflection/train jobs. (`#4`, in-process baseline)
-- [ ] Add retention cleanup worker for expired memory items. (`#8`)
+- [x] Add retention cleanup worker for expired memory items. (`#8`, async baseline)
 - [ ] Upgrade async job queue to distributed workers with retries and DLQ.
 - [ ] Add canary model registry for reranker/salience models.
 - [ ] Add optional graph projection for relation-aware retrieval.
@@ -49,3 +49,4 @@ Status date: February 25, 2026
 - [x] Published benchmark dataset and report artifact (`reports/retrieval_benchmark.md`).
 - [x] Added async job baseline (`reflect`/`train`) with `/v0/jobs/{job_id}` polling.
 - [x] Added recall stage timing metrics and structured trace logging.
+- [x] Added retention cleanup job flow with purge counts and tests.

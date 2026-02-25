@@ -217,3 +217,50 @@ async def test_recall_reports_conflict_and_honors_expiry() -> None:
         returned_texts = [item["text"] for item in payload["items"]]
         assert "This expired memory should never be returned." not in returned_texts
         assert len(payload["conflicts"]) >= 1
+
+
+@pytest.mark.anyio
+async def test_cleanup_job_purges_expired_memory() -> None:
+    async with _client() as client:
+        expired_time = (datetime.now(UTC) - timedelta(hours=2)).isoformat()
+        remember = await client.post(
+            "/v0/memory/remember",
+            json={
+                "tenant_id": "t_cleanup",
+                "agent_id": "a_cleanup",
+                "scope": "team",
+                "items": [
+                    {
+                        "type": "fact",
+                        "text": "Old expired memory item.",
+                        "expires_at": expired_time,
+                    },
+                    {
+                        "type": "fact",
+                        "text": "Active memory item.",
+                    },
+                ],
+            },
+        )
+        assert remember.status_code == 200
+
+        cleanup = await client.post(
+            "/v0/memory/cleanup",
+            json={"tenant_id": "t_cleanup", "grace_hours": 0},
+        )
+        assert cleanup.status_code == 200
+        assert cleanup.json()["status"] == "queued"
+
+        job_id = cleanup.json()["job_id"]
+        status = None
+        for _ in range(20):
+            status = await client.get(
+                f"/v0/jobs/{job_id}?tenant_id=t_cleanup&agent_id=a_cleanup"
+            )
+            assert status.status_code == 200
+            if status.json()["status"] == "completed":
+                break
+            await asyncio.sleep(0.05)
+        assert status is not None
+        assert status.json()["status"] == "completed"
+        assert status.json()["result"]["purged_count"] >= 1

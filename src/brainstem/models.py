@@ -139,6 +139,17 @@ class MemoryDetails(BaseModel):
     expires_at: datetime | None = None
 
 
+class CleanupRequest(BaseModel):
+    tenant_id: str = Field(min_length=1, max_length=128)
+    grace_hours: int = Field(default=0, ge=0, le=720)
+
+
+class CleanupResponse(BaseModel):
+    job_id: str
+    status: Literal["queued"]
+    notes: str
+
+
 class JobStatusResponse(BaseModel):
     job_id: str
     kind: Literal["reflect", "train", "cleanup"]

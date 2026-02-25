@@ -13,6 +13,8 @@ from starlette.responses import Response
 from brainstem.auth import AgentRole, AuthContext, AuthManager
 from brainstem.jobs import JobManager
 from brainstem.models import (
+    CleanupRequest,
+    CleanupResponse,
     ForgetRequest,
     ForgetResponse,
     JobStatusResponse,
@@ -254,6 +256,28 @@ def create_app(
             job_id=job.job_id,
             status="queued",
             notes="Training job queued.",
+        )
+
+    @app.post("/v0/memory/cleanup", response_model=CleanupResponse)
+    async def cleanup(
+        payload: CleanupRequest,
+        auth_context: Annotated[AuthContext, Depends(get_auth_context)],
+    ) -> CleanupResponse:
+        auth.authorize(
+            context=auth_context,
+            tenant_id=payload.tenant_id,
+            agent_id=auth_context.agent_id,
+            minimum_role=AgentRole.ADMIN,
+        )
+        job = jobs.submit_cleanup(
+            tenant_id=payload.tenant_id,
+            agent_id=auth_context.agent_id,
+            grace_hours=payload.grace_hours,
+        )
+        return CleanupResponse(
+            job_id=job.job_id,
+            status="queued",
+            notes="Cleanup job queued.",
         )
 
     @app.get("/v0/jobs/{job_id}", response_model=JobStatusResponse)

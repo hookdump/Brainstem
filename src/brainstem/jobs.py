@@ -92,6 +92,14 @@ class JobManager:
             },
         )
 
+    def submit_cleanup(self, tenant_id: str, agent_id: str, grace_hours: int) -> JobRecord:
+        return self._enqueue(
+            kind=JobKind.CLEANUP,
+            tenant_id=tenant_id,
+            agent_id=agent_id,
+            payload={"grace_hours": grace_hours},
+        )
+
     def _enqueue(
         self,
         kind: JobKind,
@@ -179,6 +187,11 @@ class JobManager:
             }
 
         if job.kind is JobKind.CLEANUP:
-            return {"notes": "cleanup not implemented yet"}
+            grace_hours = int(job.payload["grace_hours"])
+            purged = self._repository.purge_expired(
+                tenant_id=job.tenant_id,
+                grace_hours=grace_hours,
+            )
+            return {"purged_count": purged, "grace_hours": grace_hours}
 
         raise ValueError(f"Unsupported job kind: {job.kind}")

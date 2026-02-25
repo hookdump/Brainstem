@@ -163,3 +163,22 @@ async def test_train_requires_admin() -> None:
             headers={"x-brainstem-api-key": "admin-key"},
         )
         assert admin_job_view.status_code == 200
+
+
+@pytest.mark.anyio
+async def test_cleanup_requires_admin() -> None:
+    async with _auth_client(_manager()) as client:
+        writer_cleanup = await client.post(
+            "/v0/memory/cleanup",
+            headers={"x-brainstem-api-key": "writer-key"},
+            json={"tenant_id": "t_auth", "grace_hours": 0},
+        )
+        assert writer_cleanup.status_code == 403
+
+        admin_cleanup = await client.post(
+            "/v0/memory/cleanup",
+            headers={"x-brainstem-api-key": "admin-key"},
+            json={"tenant_id": "t_auth", "grace_hours": 0},
+        )
+        assert admin_cleanup.status_code == 200
+        assert admin_cleanup.json()["status"] == "queued"
