@@ -127,6 +127,12 @@ Run the sample project that writes and recalls shared context:
 python demo/rest_context_showcase/run_demo.py
 ```
 
+Run the coding-agent quickstart (concrete prompts + compacted context flow):
+
+```bash
+bash demo/agent_quickstart/scripts/run_quickstart.sh
+```
+
 ## Configuration
 
 Brainstem reads runtime config from environment variables:

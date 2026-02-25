@@ -86,3 +86,4 @@ Status date: February 25, 2026
 - [x] Added automated release prep tooling and GitHub release workflow.
 - [x] Added strict mypy type-hardening pass + CI typecheck gate.
 - [x] Added synchronous context compaction API/MCP flow with source traceability + tests.
+- [x] Added agent quickstart demo with concrete coding-agent prompts and runnable workflows. (`#56`)
