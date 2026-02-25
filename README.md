@@ -216,6 +216,11 @@ python scripts/job_worker.py --once
 - `POST /v0/memory/cleanup`
 - `GET /v0/jobs/{job_id}?tenant_id=...&agent_id=...`
 - `GET /v0/jobs/dead_letters?tenant_id=...&agent_id=...`
+- `GET /v0/models/{model_kind}?tenant_id=...&agent_id=...`
+- `POST /v0/models/{model_kind}/canary/register`
+- `POST /v0/models/{model_kind}/canary/promote`
+- `POST /v0/models/{model_kind}/canary/rollback`
+- `POST /v0/models/{model_kind}/signals`
 
 When auth mode is `api_key`, include:
 
@@ -259,6 +264,10 @@ curl -s -X POST http://localhost:8080/v0/memory/recall \
   }' | jq
 ```
 
+Recall responses include routed model metadata:
+- `model_version`
+- `model_route` (`active`, `canary_percent`, or `canary_allowlist`)
+
 ### Inspect
 
 ```bash
@@ -300,6 +309,59 @@ curl -s -X POST http://localhost:8080/v0/memory/cleanup \
 ```bash
 curl -s "http://localhost:8080/v0/jobs/dead_letters?tenant_id=t_demo&agent_id=a_admin" | jq
 ```
+
+### Register canary model + promote/rollback
+
+Register canary:
+
+```bash
+curl -s -X POST http://localhost:8080/v0/models/reranker/canary/register \
+  -H "content-type: application/json" \
+  -d '{
+    "tenant_id":"t_demo",
+    "agent_id":"a_admin",
+    "version":"reranker-canary-v2",
+    "rollout_percent":10,
+    "tenant_allowlist":["t_demo"]
+  }' | jq
+```
+
+Promote canary to active:
+
+```bash
+curl -s -X POST http://localhost:8080/v0/models/reranker/canary/promote \
+  -H "content-type: application/json" \
+  -d '{"tenant_id":"t_demo","agent_id":"a_admin"}' | jq
+```
+
+Rollback canary:
+
+```bash
+curl -s -X POST http://localhost:8080/v0/models/reranker/canary/rollback \
+  -H "content-type: application/json" \
+  -d '{"tenant_id":"t_demo","agent_id":"a_admin"}' | jq
+```
+
+Record model evaluation signal:
+
+```bash
+curl -s -X POST http://localhost:8080/v0/models/reranker/signals \
+  -H "content-type: application/json" \
+  -d '{
+    "tenant_id":"t_demo",
+    "agent_id":"a_admin",
+    "version":"reranker-canary-v2",
+    "metric":"recall_at_5",
+    "value":0.93,
+    "source":"benchmark_suite"
+  }' | jq
+```
+
+Rollout/rollback mechanics:
+1. Tenants in `tenant_allowlist` always route to canary.
+2. Remaining tenants use deterministic tenant hashing against `rollout_percent`.
+3. Promotion moves canary to active and clears rollout controls.
+4. Rollback clears canary slot and keeps current active version unchanged.
 
 ## Migrations and benchmark tools
 

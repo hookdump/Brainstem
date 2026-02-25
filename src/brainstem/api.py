@@ -13,18 +13,25 @@ from starlette.responses import Response
 
 from brainstem.auth import AgentRole, AuthContext, AuthManager
 from brainstem.jobs import JobManager
+from brainstem.model_registry import ModelRegistry
 from brainstem.models import (
     CleanupRequest,
     CleanupResponse,
     ForgetRequest,
     ForgetResponse,
     JobStatusResponse,
+    ModelKind,
+    ModelRegistryStateResponse,
+    ModelSignalRequest,
+    PromoteCanaryRequest,
     RecallRequest,
     RecallResponse,
     ReflectRequest,
     ReflectResponse,
+    RegisterCanaryRequest,
     RememberRequest,
     RememberResponse,
+    RollbackCanaryRequest,
     Scope,
     TrainRequest,
     TrainResponse,
@@ -55,14 +62,22 @@ def _create_auth_manager(settings: Settings) -> AuthManager:
     return AuthManager.from_json(settings.auth_mode, settings.api_keys_json)
 
 
-def _create_job_manager(settings: Settings, repository: MemoryRepository) -> JobManager:
+def _create_job_manager(
+    settings: Settings,
+    repository: MemoryRepository,
+    model_registry: ModelRegistry,
+) -> JobManager:
     if settings.job_backend == "inprocess":
-        return JobManager(repository=repository)
+        return JobManager(
+            repository=repository,
+            model_registry=model_registry,
+        )
     if settings.job_backend == "sqlite":
         return JobManager(
             repository=repository,
             sqlite_path=settings.job_sqlite_path,
             start_worker=settings.job_worker_enabled,
+            model_registry=model_registry,
         )
     raise ValueError(f"unsupported BRAINSTEM_JOB_BACKEND: {settings.job_backend}")
 
@@ -71,11 +86,13 @@ def create_app(
     repository: MemoryRepository | None = None,
     settings: Settings | None = None,
     auth_manager: AuthManager | None = None,
+    model_registry: ModelRegistry | None = None,
 ) -> FastAPI:
     runtime_settings = settings if settings is not None else load_settings()
     repo = repository if repository is not None else _create_repository(runtime_settings)
     auth = auth_manager if auth_manager is not None else _create_auth_manager(runtime_settings)
-    jobs = _create_job_manager(runtime_settings, repo)
+    registry = model_registry if model_registry is not None else ModelRegistry()
+    jobs = _create_job_manager(runtime_settings, repo, registry)
     metrics = MetricsStore()
 
     @asynccontextmanager
@@ -134,6 +151,12 @@ def create_app(
     ) -> AuthContext:
         return auth.authenticate(x_brainstem_api_key)
 
+    def _registry_or_400(callable_fn, *args, **kwargs):
+        try:
+            return callable_fn(*args, **kwargs)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
     @app.get("/healthz")
     async def healthz() -> dict[str, str]:
         return {"status": "ok", "service": "brainstem", "version": "0.2.0"}
@@ -168,6 +191,9 @@ def create_app(
         recall_start = perf_counter()
         response = repo.recall(payload)
         recall_ms = duration_ms(recall_start)
+        model_version, model_route = registry.select_version("reranker", payload.tenant_id)
+        response.model_version = model_version
+        response.model_route = model_route
 
         metrics.record_pipeline_timing("recall.auth", auth_ms)
         metrics.record_pipeline_timing("recall.store", recall_ms)
@@ -342,6 +368,105 @@ def create_app(
         if auth_context.role is not AgentRole.ADMIN and job.agent_id != agent_id:
             raise HTTPException(status_code=403, detail="agent_mismatch")
         return JobStatusResponse.model_validate(job.to_dict())
+
+    @app.get("/v0/models/{model_kind}", response_model=ModelRegistryStateResponse)
+    async def model_state(
+        model_kind: ModelKind,
+        tenant_id: str,
+        agent_id: str,
+        auth_context: Annotated[AuthContext, Depends(get_auth_context)],
+    ) -> ModelRegistryStateResponse:
+        auth.authorize(
+            context=auth_context,
+            tenant_id=tenant_id,
+            agent_id=agent_id,
+            minimum_role=AgentRole.ADMIN,
+        )
+        state = _registry_or_400(registry.get_state, model_kind.value)
+        return ModelRegistryStateResponse.model_validate(state)
+
+    @app.post(
+        "/v0/models/{model_kind}/canary/register",
+        response_model=ModelRegistryStateResponse,
+    )
+    async def register_model_canary(
+        model_kind: ModelKind,
+        payload: RegisterCanaryRequest,
+        auth_context: Annotated[AuthContext, Depends(get_auth_context)],
+    ) -> ModelRegistryStateResponse:
+        auth.authorize(
+            context=auth_context,
+            tenant_id=payload.tenant_id,
+            agent_id=payload.agent_id,
+            minimum_role=AgentRole.ADMIN,
+        )
+        state = _registry_or_400(
+            registry.register_canary,
+            model_kind.value,
+            payload.version,
+            payload.rollout_percent,
+            payload.tenant_allowlist,
+            payload.metadata,
+        )
+        return ModelRegistryStateResponse.model_validate(state)
+
+    @app.post(
+        "/v0/models/{model_kind}/canary/promote",
+        response_model=ModelRegistryStateResponse,
+    )
+    async def promote_model_canary(
+        model_kind: ModelKind,
+        payload: PromoteCanaryRequest,
+        auth_context: Annotated[AuthContext, Depends(get_auth_context)],
+    ) -> ModelRegistryStateResponse:
+        auth.authorize(
+            context=auth_context,
+            tenant_id=payload.tenant_id,
+            agent_id=payload.agent_id,
+            minimum_role=AgentRole.ADMIN,
+        )
+        state = _registry_or_400(registry.promote_canary, model_kind.value)
+        return ModelRegistryStateResponse.model_validate(state)
+
+    @app.post(
+        "/v0/models/{model_kind}/canary/rollback",
+        response_model=ModelRegistryStateResponse,
+    )
+    async def rollback_model_canary(
+        model_kind: ModelKind,
+        payload: RollbackCanaryRequest,
+        auth_context: Annotated[AuthContext, Depends(get_auth_context)],
+    ) -> ModelRegistryStateResponse:
+        auth.authorize(
+            context=auth_context,
+            tenant_id=payload.tenant_id,
+            agent_id=payload.agent_id,
+            minimum_role=AgentRole.ADMIN,
+        )
+        state = _registry_or_400(registry.rollback_canary, model_kind.value)
+        return ModelRegistryStateResponse.model_validate(state)
+
+    @app.post("/v0/models/{model_kind}/signals", response_model=ModelRegistryStateResponse)
+    async def record_model_signal(
+        model_kind: ModelKind,
+        payload: ModelSignalRequest,
+        auth_context: Annotated[AuthContext, Depends(get_auth_context)],
+    ) -> ModelRegistryStateResponse:
+        auth.authorize(
+            context=auth_context,
+            tenant_id=payload.tenant_id,
+            agent_id=payload.agent_id,
+            minimum_role=AgentRole.ADMIN,
+        )
+        state = _registry_or_400(
+            registry.record_signal,
+            model_kind.value,
+            payload.version,
+            payload.metric,
+            payload.value,
+            payload.source,
+        )
+        return ModelRegistryStateResponse.model_validate(state)
 
     @app.get("/v0/meta")
     async def meta() -> dict[str, str]:

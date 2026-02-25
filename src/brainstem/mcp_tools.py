@@ -7,6 +7,7 @@ from typing import Any
 from brainstem.auth import AgentRole, AuthContext, role_rank
 from brainstem.jobs import JobManager
 from brainstem.mcp_auth import MCPAuthManager
+from brainstem.model_registry import ModelRegistry
 from brainstem.models import (
     CleanupRequest,
     ForgetRequest,
@@ -25,9 +26,15 @@ class MCPToolService:
         repository: MemoryRepository | None = None,
         jobs: JobManager | None = None,
         auth_manager: MCPAuthManager | None = None,
+        model_registry: ModelRegistry | None = None,
     ) -> None:
         self.repository = repository if repository is not None else InMemoryRepository()
-        self.jobs = jobs if jobs is not None else JobManager(self.repository)
+        self.model_registry = model_registry if model_registry is not None else ModelRegistry()
+        self.jobs = (
+            jobs
+            if jobs is not None
+            else JobManager(self.repository, model_registry=self.model_registry)
+        )
         self.auth_manager = auth_manager if auth_manager is not None else MCPAuthManager.from_env()
 
     def _authorize(
@@ -93,7 +100,14 @@ class MCPToolService:
             require_agent=True,
         )
         request = RecallRequest.model_validate(normalized)
-        return self.repository.recall(request).model_dump()
+        response = self.repository.recall(request)
+        model_version, model_route = self.model_registry.select_version(
+            model_kind="reranker",
+            tenant_id=request.tenant_id,
+        )
+        response.model_version = model_version
+        response.model_route = model_route
+        return response.model_dump()
 
     def inspect(self, payload: dict[str, Any]) -> dict[str, Any]:
         normalized, _ = self._authorize(

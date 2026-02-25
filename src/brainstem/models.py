@@ -28,6 +28,11 @@ class TrustLevel(StrEnum):
     UNTRUSTED_WEB = "untrusted_web"
 
 
+class ModelKind(StrEnum):
+    RERANKER = "reranker"
+    SALIENCE = "salience"
+
+
 class RememberInputItem(BaseModel):
     type: MemoryType
     text: str = Field(min_length=1, max_length=4000)
@@ -87,6 +92,8 @@ class RecallResponse(BaseModel):
     composed_tokens_estimate: int
     conflicts: list[str]
     trace_id: str
+    model_version: str | None = None
+    model_route: str | None = None
 
 
 class ReflectRequest(BaseModel):
@@ -161,3 +168,42 @@ class JobStatusResponse(BaseModel):
     error: str | None = None
     attempts: int = 0
     max_attempts: int = 1
+
+
+class RegisterCanaryRequest(BaseModel):
+    tenant_id: str = Field(min_length=1, max_length=128)
+    agent_id: str = Field(min_length=1, max_length=128)
+    version: str = Field(min_length=1, max_length=128)
+    rollout_percent: int = Field(default=10, ge=0, le=100)
+    tenant_allowlist: list[str] = Field(default_factory=list)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class PromoteCanaryRequest(BaseModel):
+    tenant_id: str = Field(min_length=1, max_length=128)
+    agent_id: str = Field(min_length=1, max_length=128)
+
+
+class RollbackCanaryRequest(BaseModel):
+    tenant_id: str = Field(min_length=1, max_length=128)
+    agent_id: str = Field(min_length=1, max_length=128)
+
+
+class ModelSignalRequest(BaseModel):
+    tenant_id: str = Field(min_length=1, max_length=128)
+    agent_id: str = Field(min_length=1, max_length=128)
+    version: str = Field(min_length=1, max_length=128)
+    metric: str = Field(min_length=1, max_length=128)
+    value: float
+    source: str | None = Field(default=None, max_length=256)
+
+
+class ModelRegistryStateResponse(BaseModel):
+    model_kind: ModelKind
+    active_version: str
+    canary_version: str | None = None
+    rollout_percent: int = Field(ge=0, le=100)
+    tenant_allowlist: list[str] = Field(default_factory=list)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    signal_summary: dict[str, dict[str, float]] = Field(default_factory=dict)
+    updated_at: datetime

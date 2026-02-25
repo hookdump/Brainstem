@@ -31,7 +31,7 @@ Status date: February 25, 2026
 - [x] Harden MCP transport with auth/session security and integration fixtures. (`#19`)
 - [x] Add CI job for Postgres integration test execution. (`#20`)
 - [x] Add first-party CLI for admin and ops workflows. (`#21`)
-- [ ] Add canary model registry for reranker/salience models.
+- [x] Add canary model registry for reranker/salience models. (`#28`)
 - [ ] Add optional graph projection for relation-aware retrieval.
 - [x] Publish reproducible benchmark suite and leaderboard examples. (`#30`)
 
@@ -64,3 +64,4 @@ Status date: February 25, 2026
 - [x] Hardened MCP auth/session defaults with token enforcement and deny/allow tests.
 - [x] Added SQLite-backed shared queue mode for distributed async workers and durable DLQ.
 - [x] Added benchmark suite manifest + leaderboard generation with CI artifacts.
+- [x] Added canary model registry endpoints with rollout/promotion/rollback and signals.
