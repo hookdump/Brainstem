@@ -50,6 +50,20 @@ def test_mcp_tool_service_memory_flow() -> None:
     )
     memory_id = remember["memory_ids"][0]
 
+    compact = service.compact(
+        _with_token(
+            "writer-token",
+            {
+                "scope": "team",
+                "query": "Summarize MCP memory fact context",
+                "target_tokens": 200,
+                "max_source_items": 10,
+            },
+        )
+    )
+    assert compact["created_memory_id"] is not None
+    assert compact["source_count"] >= 1
+
     recall = service.recall(
         _with_token(
             "reader-token",
@@ -60,7 +74,9 @@ def test_mcp_tool_service_memory_flow() -> None:
         )
     )
     assert len(recall["items"]) >= 1
-    assert recall["items"][0]["memory_id"] == memory_id
+    recall_ids = [item["memory_id"] for item in recall["items"]]
+    assert memory_id in recall_ids
+    assert compact["created_memory_id"] in recall_ids
     assert recall["model_version"] is not None
     assert recall["model_route"] is not None
 

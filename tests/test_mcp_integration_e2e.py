@@ -79,6 +79,7 @@ def test_mcp_e2e_list_tools_and_memory_flow() -> None:
             tool_names = {tool.name for tool in tools.tools}
             assert "brain.remember" in tool_names
             assert "brain.recall" in tool_names
+            assert "brain.compact" in tool_names
             assert "brain.job_status" in tool_names
 
             remember = await _call_tool(
@@ -95,6 +96,21 @@ def test_mcp_e2e_list_tools_and_memory_flow() -> None:
             assert remember.isError is False
             memory_id = str(_result_json(remember)["memory_ids"][0])
 
+            compact = await _call_tool(
+                session,
+                "brain.compact",
+                {
+                    "auth_token": "writer-token",
+                    "tenant_id": "t_mcp",
+                    "agent_id": "a_writer",
+                    "scope": "team",
+                    "query": "Summarize MCP E2E fact context",
+                    "target_tokens": 220,
+                },
+            )
+            assert compact.isError is False
+            compact_memory_id = str(_result_json(compact)["created_memory_id"])
+
             recall = await _call_tool(
                 session,
                 "brain.recall",
@@ -110,6 +126,7 @@ def test_mcp_e2e_list_tools_and_memory_flow() -> None:
             assert recall.isError is False
             recall_json = _result_json(recall)
             assert any(item["memory_id"] == memory_id for item in recall_json["items"])
+            assert any(item["memory_id"] == compact_memory_id for item in recall_json["items"])
 
     anyio.run(scenario)
 

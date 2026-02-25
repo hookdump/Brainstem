@@ -20,6 +20,7 @@ Status date: February 25, 2026
 - [x] Add retention/TTL workflow support (`expires_at`) in memory ingestion and recall filtering.
 - [x] Expand benchmark dataset and publish reproducible benchmark report. (`#3`)
 - [x] Add end-to-end MCP integration test harness. (`#37`)
+- [x] Add context compaction workflow to compress memory into reusable summaries. (`#53`)
 
 ## Later
 
@@ -84,3 +85,4 @@ Status date: February 25, 2026
 - [x] Added backup/restore scripts + restore verification playbook and smoke tests.
 - [x] Added automated release prep tooling and GitHub release workflow.
 - [x] Added strict mypy type-hardening pass + CI typecheck gate.
+- [x] Added synchronous context compaction API/MCP flow with source traceability + tests.

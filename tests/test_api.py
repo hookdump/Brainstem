@@ -112,6 +112,65 @@ async def test_memory_lifecycle() -> None:
 
 
 @pytest.mark.anyio
+async def test_memory_compaction_flow() -> None:
+    async with _client() as client:
+        remember = await client.post(
+            "/v0/memory/remember",
+            json={
+                "tenant_id": "t_compact",
+                "agent_id": "a_writer",
+                "scope": "team",
+                "items": [
+                    {
+                        "type": "fact",
+                        "text": "Ops review requires migration checklist completion.",
+                    },
+                    {
+                        "type": "event",
+                        "text": "Staging deploy produced timeout alerts in EU region.",
+                    },
+                    {
+                        "type": "policy",
+                        "text": "Production rollout needs security sign-off.",
+                    },
+                ],
+            },
+        )
+        assert remember.status_code == 200
+
+        compact = await client.post(
+            "/v0/memory/compact",
+            json={
+                "tenant_id": "t_compact",
+                "agent_id": "a_writer",
+                "scope": "team",
+                "query": "Summarize deploy readiness context.",
+                "target_tokens": 220,
+                "max_source_items": 12,
+            },
+        )
+        assert compact.status_code == 200
+        compact_payload = compact.json()
+        assert compact_payload["created_memory_id"] is not None
+        assert compact_payload["source_count"] >= 1
+        assert compact_payload["summary_text"].startswith("Compacted context for query")
+
+        recall = await client.post(
+            "/v0/memory/recall",
+            json={
+                "tenant_id": "t_compact",
+                "agent_id": "a_writer",
+                "scope": "team",
+                "query": "deploy readiness summary",
+                "budget": {"max_items": 20, "max_tokens": 4000},
+            },
+        )
+        assert recall.status_code == 200
+        recall_ids = [item["memory_id"] for item in recall.json()["items"]]
+        assert compact_payload["created_memory_id"] in recall_ids
+
+
+@pytest.mark.anyio
 async def test_reflect_and_train() -> None:
     async with _client() as client:
         remember = await client.post(
