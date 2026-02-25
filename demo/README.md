@@ -7,6 +7,9 @@ shared memory service.
 
 - `rest_context_showcase/`:
   simple REST-based end-to-end flow for storing and retrieving team context.
+- `agent_quickstart/`:
+  concrete coding-agent onboarding with copy/paste prompts and a runnable
+  remember/recall/compact workflow.
 
 ## Quick start
 
@@ -22,3 +25,8 @@ brainstem serve-api
 python demo/rest_context_showcase/run_demo.py
 ```
 
+3. Run the coding-agent quickstart:
+
+```bash
+bash demo/agent_quickstart/scripts/run_quickstart.sh
+```
