@@ -9,7 +9,7 @@ Status date: February 25, 2026
 - [x] Add initial tests and CI baseline.
 - [ ] Replace in-memory store with PostgreSQL + pgvector backend. (`#1`, scaffold added)
 - [x] Add authn/authz middleware for tenant and scope enforcement. (`#2`)
-- [ ] Add retrieval metrics and tracing instrumentation. (`#5`, request metrics baseline done)
+- [x] Add retrieval metrics and tracing instrumentation. (`#5`)
 
 ## Next (High Priority)
 
@@ -22,9 +22,9 @@ Status date: February 25, 2026
 
 ## Later
 
-- [ ] Add MCP-native server transport (in addition to REST mirror). (`#8`)
+- [ ] Add MCP-native server transport (in addition to REST mirror). (`#7`)
 - [x] Add async worker queue for reflection/train jobs. (`#4`, in-process baseline)
-- [ ] Add retention cleanup worker for expired memory items. (`#7`)
+- [ ] Add retention cleanup worker for expired memory items. (`#8`)
 - [ ] Upgrade async job queue to distributed workers with retries and DLQ.
 - [ ] Add canary model registry for reranker/salience models.
 - [ ] Add optional graph projection for relation-aware retrieval.
@@ -48,3 +48,4 @@ Status date: February 25, 2026
 - [x] Added Postgres backend scaffold + pgvector migration baseline.
 - [x] Published benchmark dataset and report artifact (`reports/retrieval_benchmark.md`).
 - [x] Added async job baseline (`reflect`/`train`) with `/v0/jobs/{job_id}` polling.
+- [x] Added recall stage timing metrics and structured trace logging.

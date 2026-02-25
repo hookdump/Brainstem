@@ -29,6 +29,7 @@ It lets multiple agents store, retrieve, and reuse context across sessions with:
   - retention support with `expires_at`
 - Observability baseline:
   - per-route request counters and latency summaries
+  - recall stage timings (`recall.auth`, `recall.store`)
   - `GET /v0/metrics` endpoint
 - Tooling:
   - migration script for SQLite

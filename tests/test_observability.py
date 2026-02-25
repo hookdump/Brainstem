@@ -30,6 +30,17 @@ async def test_metrics_endpoint_tracks_requests() -> None:
                 },
             )
         ).status_code == 200
+        assert (
+            await client.post(
+                "/v0/memory/recall",
+                json={
+                    "tenant_id": "t_metrics",
+                    "agent_id": "a_metrics",
+                    "scope": "team",
+                    "query": "metrics memory",
+                },
+            )
+        ).status_code == 200
 
         metrics = await client.get("/v0/metrics")
         assert metrics.status_code == 200
@@ -39,6 +50,9 @@ async def test_metrics_endpoint_tracks_requests() -> None:
         assert snapshot["request_count"] >= 3
         assert snapshot["route_counts"]["GET /healthz"] >= 2
         assert snapshot["route_counts"]["POST /v0/memory/remember"] >= 1
+        assert snapshot["route_counts"]["POST /v0/memory/recall"] >= 1
+        assert snapshot["pipeline_latency_ms"]["recall.auth"]["count"] >= 1
+        assert snapshot["pipeline_latency_ms"]["recall.store"]["count"] >= 1
 
 
 @pytest.mark.anyio

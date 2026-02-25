@@ -1,5 +1,7 @@
 """HTTP API for Brainstem v0."""
 
+import json
+import logging
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 from time import perf_counter
@@ -28,6 +30,8 @@ from brainstem.observability import MetricsStore, RequestMetric, duration_ms
 from brainstem.settings import Settings, load_settings
 from brainstem.store import InMemoryRepository, MemoryRepository, SQLiteRepository
 from brainstem.store_postgres import PostgresRepository
+
+LOGGER = logging.getLogger("brainstem.api")
 
 
 def _create_repository(settings: Settings) -> MemoryRepository:
@@ -130,13 +134,36 @@ def create_app(
         payload: RecallRequest,
         auth_context: Annotated[AuthContext, Depends(get_auth_context)],
     ) -> RecallResponse:
+        auth_start = perf_counter()
         auth.authorize(
             context=auth_context,
             tenant_id=payload.tenant_id,
             agent_id=payload.agent_id,
             minimum_role=AgentRole.READER,
         )
-        return repo.recall(payload)
+        auth_ms = duration_ms(auth_start)
+        recall_start = perf_counter()
+        response = repo.recall(payload)
+        recall_ms = duration_ms(recall_start)
+
+        metrics.record_pipeline_timing("recall.auth", auth_ms)
+        metrics.record_pipeline_timing("recall.store", recall_ms)
+
+        LOGGER.info(
+            "recall_trace %s",
+            json.dumps(
+                {
+                    "tenant_id": payload.tenant_id,
+                    "agent_id": payload.agent_id,
+                    "trace_id": response.trace_id,
+                    "items": len(response.items),
+                    "auth_ms": round(auth_ms, 2),
+                    "store_ms": round(recall_ms, 2),
+                },
+                sort_keys=True,
+            ),
+        )
+        return response
 
     @app.get("/v0/memory/{memory_id}")
     async def inspect(
