@@ -18,6 +18,8 @@ def test_postgres_backend_requires_dsn() -> None:
                 job_backend="inprocess",
                 job_sqlite_path=".data/jobs.db",
                 job_worker_enabled=True,
+                graph_enabled=False,
+                graph_max_expansion=4,
             )
         )
 
@@ -34,6 +36,8 @@ def test_unknown_backend_rejected() -> None:
                 job_backend="inprocess",
                 job_sqlite_path=".data/jobs.db",
                 job_worker_enabled=True,
+                graph_enabled=False,
+                graph_max_expansion=4,
             )
         )
 
@@ -50,5 +54,7 @@ def test_unknown_job_backend_rejected() -> None:
                 job_backend="unknown",
                 job_sqlite_path=".data/jobs.db",
                 job_worker_enabled=True,
+                graph_enabled=False,
+                graph_max_expansion=4,
             )
         )

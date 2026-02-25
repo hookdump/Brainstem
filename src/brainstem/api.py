@@ -12,6 +12,12 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from starlette.responses import Response
 
 from brainstem.auth import AgentRole, AuthContext, AuthManager
+from brainstem.graph import (
+    GraphAugmentedRepository,
+    InMemoryGraphStore,
+    PostgresGraphStore,
+    SQLiteGraphStore,
+)
 from brainstem.jobs import JobManager
 from brainstem.model_registry import ModelRegistry
 from brainstem.models import (
@@ -82,6 +88,24 @@ def _create_job_manager(
     raise ValueError(f"unsupported BRAINSTEM_JOB_BACKEND: {settings.job_backend}")
 
 
+def _create_graph_store(
+    settings: Settings,
+) -> InMemoryGraphStore | SQLiteGraphStore | PostgresGraphStore | None:
+    if not settings.graph_enabled:
+        return None
+    if settings.store_backend == "inmemory":
+        return InMemoryGraphStore()
+    if settings.store_backend == "sqlite":
+        return SQLiteGraphStore(settings.sqlite_path)
+    if settings.store_backend == "postgres":
+        if not settings.postgres_dsn:
+            raise ValueError(
+                "BRAINSTEM_POSTGRES_DSN is required when BRAINSTEM_STORE_BACKEND=postgres"
+            )
+        return PostgresGraphStore(settings.postgres_dsn)
+    raise ValueError(f"unsupported BRAINSTEM_STORE_BACKEND: {settings.store_backend}")
+
+
 def create_app(
     repository: MemoryRepository | None = None,
     settings: Settings | None = None,
@@ -93,6 +117,16 @@ def create_app(
     auth = auth_manager if auth_manager is not None else _create_auth_manager(runtime_settings)
     registry = model_registry if model_registry is not None else ModelRegistry()
     jobs = _create_job_manager(runtime_settings, repo, registry)
+    graph_store = _create_graph_store(runtime_settings)
+    graph_repository = (
+        GraphAugmentedRepository(
+            repository=repo,
+            graph_store=graph_store,
+            max_expansion=runtime_settings.graph_max_expansion,
+        )
+        if graph_store is not None
+        else None
+    )
     metrics = MetricsStore()
 
     @asynccontextmanager
@@ -101,6 +135,8 @@ def create_app(
             yield
         finally:
             jobs.close()
+            if graph_store is not None:
+                graph_store.close()
 
     app = FastAPI(
         title="Brainstem API",
@@ -173,7 +209,15 @@ def create_app(
             minimum_role=AgentRole.WRITER,
             scope=payload.scope,
         )
-        return repo.remember(payload)
+        response = repo.remember(payload)
+        if graph_store is not None:
+            for memory_id, item in zip(response.memory_ids, payload.items, strict=False):
+                graph_store.project_memory(
+                    tenant_id=payload.tenant_id,
+                    memory_id=memory_id,
+                    text=item.text,
+                )
+        return response
 
     @app.post("/v0/memory/recall", response_model=RecallResponse)
     async def recall(
@@ -189,7 +233,11 @@ def create_app(
         )
         auth_ms = duration_ms(auth_start)
         recall_start = perf_counter()
-        response = repo.recall(payload)
+        response = (
+            graph_repository.recall(payload)
+            if graph_repository is not None
+            else repo.recall(payload)
+        )
         recall_ms = duration_ms(recall_start)
         model_version, model_route = registry.select_version("reranker", payload.tenant_id)
         response.model_version = model_version
@@ -475,6 +523,7 @@ def create_app(
             "mode": "v0",
             "store_backend": runtime_settings.store_backend,
             "auth_mode": runtime_settings.auth_mode,
+            "graph_enabled": str(runtime_settings.graph_enabled).lower(),
             "generated_at": datetime.now(UTC).isoformat(),
         }
 
@@ -488,6 +537,7 @@ def create_app(
             "service": "brainstem",
             "store_backend": runtime_settings.store_backend,
             "auth_mode": runtime_settings.auth_mode,
+            "graph_enabled": runtime_settings.graph_enabled,
             "snapshot": metrics.snapshot(),
         }
 

@@ -21,10 +21,24 @@ def test_run_benchmark_inmemory() -> None:
         k=5,
     )
     assert output["backend"] == "inmemory"
+    assert output["graph_enabled"] is False
     assert output["case_count"] >= 10
     metrics = output["metrics"]
     assert 0.0 <= metrics["recall@5"] <= 1.0
     assert 0.0 <= metrics["ndcg@5"] <= 1.0
+
+
+def test_run_benchmark_with_graph_enabled(tmp_path: Path) -> None:
+    output = run_benchmark(
+        dataset_path="benchmarks/retrieval_dataset.json",
+        backend="sqlite",
+        sqlite_path=str(tmp_path / "graph-benchmark.db"),
+        k=5,
+        graph_enabled=True,
+        graph_max_expansion=4,
+    )
+    assert output["backend"] == "sqlite"
+    assert output["graph_enabled"] is True
 
 
 def test_generate_benchmark_report_script(tmp_path: Path) -> None:
@@ -46,7 +60,8 @@ def test_generate_benchmark_report_script(tmp_path: Path) -> None:
     )
     content = report_path.read_text(encoding="utf-8")
     assert "Brainstem Retrieval Benchmark Report" in content
-    assert "| Backend | Recall@K | nDCG@K | Avg Composed Tokens |" in content
+    assert "| Backend | Graph Mode | Recall@K | nDCG@K | Avg Composed Tokens |" in content
+    assert "## Graph Impact" in content
 
 
 def test_generate_leaderboard_script(tmp_path: Path) -> None:
