@@ -106,6 +106,35 @@ def test_cli_leaderboard_writes_artifacts(tmp_path: Path) -> None:
     assert (output_dir / "leaderboard.md").exists()
 
 
+def test_cli_perf_regression_writes_artifacts(tmp_path: Path) -> None:
+    output_json = tmp_path / "perf.json"
+    output_md = tmp_path / "perf.md"
+    status = cli.main(
+        [
+            "perf-regression",
+            "--iterations",
+            "8",
+            "--seed-count",
+            "4",
+            "--output-json",
+            str(output_json),
+            "--output-md",
+            str(output_md),
+            "--max-remember-p95-ms",
+            "10000",
+            "--max-recall-p95-ms",
+            "10000",
+            "--max-memory-growth-bytes",
+            "200000000",
+        ]
+    )
+    assert status == 0
+    assert output_json.exists()
+    assert output_md.exists()
+    payload = json.loads(output_json.read_text(encoding="utf-8"))
+    assert payload["pass"] is True
+
+
 def test_cli_health_success(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:

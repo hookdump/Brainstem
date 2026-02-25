@@ -1,4 +1,4 @@
-.PHONY: install lint test run-api run-worker run-mcp docker-up docker-down docker-logs docker-smoke benchmark report leaderboard
+.PHONY: install lint test run-api run-worker run-mcp docker-up docker-down docker-logs docker-smoke benchmark report leaderboard perf-regression
 
 install:
 	python3 -m venv .venv
@@ -39,3 +39,6 @@ report:
 
 leaderboard:
 	.venv/bin/brainstem leaderboard --manifest benchmarks/suite_manifest.json --output-dir reports/leaderboard --sqlite-dir .data/leaderboard
+
+perf-regression:
+	.venv/bin/brainstem perf-regression --output-json reports/performance/perf_regression.json --output-md reports/performance/perf_regression.md

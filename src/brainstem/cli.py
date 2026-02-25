@@ -14,6 +14,7 @@ from brainstem.benchmark import run_benchmark
 from brainstem.graph import parse_relation_weights_json
 from brainstem.leaderboard import write_leaderboard_artifacts
 from brainstem.main import run as run_api
+from brainstem.performance import run_performance_regression, write_performance_artifacts
 from brainstem.reporting import generate_benchmark_report
 
 
@@ -73,6 +74,18 @@ def build_parser() -> argparse.ArgumentParser:
     leaderboard.add_argument("--manifest", default="benchmarks/suite_manifest.json")
     leaderboard.add_argument("--output-dir", default="reports/leaderboard")
     leaderboard.add_argument("--sqlite-dir", default=".data/leaderboard")
+
+    perf = subparsers.add_parser(
+        "perf-regression",
+        help="Run sustained performance regression suite and write artifacts",
+    )
+    perf.add_argument("--iterations", type=int, default=200)
+    perf.add_argument("--seed-count", type=int, default=100)
+    perf.add_argument("--output-json", default="reports/performance/perf_regression.json")
+    perf.add_argument("--output-md", default="reports/performance/perf_regression.md")
+    perf.add_argument("--max-remember-p95-ms", type=float, default=250.0)
+    perf.add_argument("--max-recall-p95-ms", type=float, default=250.0)
+    perf.add_argument("--max-memory-growth-bytes", type=float, default=80_000_000.0)
 
     health = subparsers.add_parser("health", help="Run HTTP health check")
     health.add_argument("--url", default="http://localhost:8080/healthz")
@@ -140,6 +153,29 @@ def main(argv: list[str] | None = None) -> int:
         )
         print(f"Wrote leaderboard JSON to {json_path}")
         print(f"Wrote leaderboard markdown to {md_path}")
+        return 0
+
+    if args.command == "perf-regression":
+        result = run_performance_regression(
+            iterations=max(1, args.iterations),
+            seed_count=max(0, args.seed_count),
+            max_remember_p95_ms=max(1.0, args.max_remember_p95_ms),
+            max_recall_p95_ms=max(1.0, args.max_recall_p95_ms),
+            max_memory_growth_bytes=max(1_000_000.0, args.max_memory_growth_bytes),
+        )
+        json_path, md_path = write_performance_artifacts(
+            output_json=args.output_json,
+            output_md=args.output_md,
+            result=result,
+        )
+        print(f"Wrote performance JSON to {json_path}")
+        print(f"Wrote performance markdown to {md_path}")
+        print(f"Performance status: {'PASS' if result['pass'] else 'FAIL'}")
+        if result["violations"]:
+            print("Violations:")
+            for violation in result["violations"]:
+                print(f"- {violation}")
+            return 1
         return 0
 
     if args.command == "health":
