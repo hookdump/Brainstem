@@ -28,7 +28,7 @@ Status date: February 25, 2026
 - [x] Add Docker deployment and local compose stack. (`#18`)
 - [x] Add retry policy and dead-letter tracking for async jobs. (`#17`, in-process baseline)
 - [ ] Upgrade async job queue to distributed workers with persistent retries and DLQ.
-- [ ] Harden MCP transport with auth/session security and integration fixtures. (`#19`)
+- [x] Harden MCP transport with auth/session security and integration fixtures. (`#19`)
 - [x] Add CI job for Postgres integration test execution. (`#20`)
 - [x] Add first-party CLI for admin and ops workflows. (`#21`)
 - [ ] Add canary model registry for reranker/salience models.
@@ -61,3 +61,4 @@ Status date: February 25, 2026
 - [x] Added async retry attempts and dead-letter inspection endpoint.
 - [x] Added dedicated CI job for Postgres integration tests.
 - [x] Added first-party `brainstem` CLI plus backward-compatible script wrappers.
+- [x] Hardened MCP auth/session defaults with token enforcement and deny/allow tests.

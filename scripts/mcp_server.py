@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from brainstem.mcp_auth import MCPAuthManager
 from brainstem.mcp_tools import MCPToolService
 
 try:
@@ -15,7 +16,18 @@ except ImportError as exc:  # pragma: no cover - import guard for optional depen
     ) from exc
 
 
-service = MCPToolService()
+def _build_service() -> MCPToolService:
+    try:
+        auth_manager = MCPAuthManager.from_env()
+    except ValueError as exc:
+        raise SystemExit(
+            "Invalid MCP auth configuration. Set BRAINSTEM_MCP_AUTH_MODE and "
+            f"BRAINSTEM_MCP_TOKENS correctly. Details: {exc}"
+        ) from exc
+    return MCPToolService(auth_manager=auth_manager)
+
+
+service = _build_service()
 mcp = FastMCP("brainstem")
 
 
