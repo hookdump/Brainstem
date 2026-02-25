@@ -8,16 +8,17 @@ Status date: February 25, 2026
 - [x] Implement v0 API skeleton with memory endpoints.
 - [x] Add initial tests and CI baseline.
 - [ ] Replace in-memory store with PostgreSQL + pgvector backend. (`#1`)
-- [ ] Add authn/authz middleware for tenant and scope enforcement. (`#2`)
+- [x] Add authn/authz middleware for tenant and scope enforcement. (`#2`)
 - [ ] Add retrieval metrics and tracing instrumentation. (`#5`)
 
 ## Next (High Priority)
 
-- [ ] Implement DB schema + migrations from `BRAIN_V0_TECH_SPEC.md`.
-- [ ] Add idempotency persistence in storage layer.
+- [x] Implement DB schema + migrations baseline from `BRAIN_V0_TECH_SPEC.md` (SQLite v0).
+- [x] Add idempotency persistence in storage layer (SQLite backend).
+- [x] Build baseline benchmark harness for Recall@K and token efficiency. (`#3`, local script)
 - [ ] Add conflict tracking for contradictory facts.
 - [ ] Add retention/TTL and deletion policy workflows.
-- [ ] Build benchmark harness for Recall@K and token efficiency. (`#3`)
+- [ ] Expand benchmark dataset and publish reproducible benchmark report. (`#3`)
 
 ## Later
 
@@ -34,3 +35,8 @@ Status date: February 25, 2026
 - [x] Drafted concept and v0 implementation specification documents.
 - [x] Created roadmap issues in GitHub: `#1` to `#5`.
 - [x] Opened bootstrap implementation PR: `#6` (`feat/bootstrap-v0` -> `main`).
+- [x] Added SQLite persistent repository + migration script.
+- [x] Added API-key auth mode and role-based endpoint authorization.
+- [x] Expanded tests for auth and SQLite persistence.
+- [x] Added retrieval eval harness (`scripts/benchmark_recall.py`) with tests.
+- [x] Closed GitHub issue `#2` (auth middleware complete for v0).

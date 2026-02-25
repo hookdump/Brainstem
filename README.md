@@ -20,11 +20,13 @@ Brainstem aims to provide a third path:
 
 ## Current status
 
-`v0 bootstrap` is implemented in this repository:
+`v0 implementation` is underway and already usable:
 
 - FastAPI service skeleton
 - Core memory APIs: `remember`, `recall`, `inspect`, `forget`, `reflect`, `train`
-- In-memory repository implementation (for fast iteration)
+- In-memory and SQLite repository implementations
+- API-key authn/authz mode with role enforcement (`reader` / `writer` / `admin`)
+- SQLite schema migration baseline
 - Tests and CI baseline
 - Roadmap and architecture specs
 
@@ -94,6 +96,44 @@ curl -s -X POST http://localhost:8080/v0/memory/recall \
   }' | jq
 ```
 
+### Optional: run with SQLite persistence
+
+```bash
+export BRAINSTEM_STORE_BACKEND=sqlite
+export BRAINSTEM_SQLITE_PATH=.data/brainstem.db
+brainstem-api
+```
+
+### Optional: enable API key auth
+
+```bash
+export BRAINSTEM_AUTH_MODE=api_key
+export BRAINSTEM_API_KEYS='{
+  "writer-key": {"tenant_id":"t_demo","agent_id":"a_writer","role":"writer"},
+  "admin-key": {"tenant_id":"t_demo","agent_id":"a_admin","role":"admin"}
+}'
+brainstem-api
+```
+
+Then include the header on protected endpoints:
+
+```bash
+-H "x-brainstem-api-key: writer-key"
+```
+
+### Initialize SQLite DB via migration script
+
+```bash
+python scripts/init_sqlite_db.py --db .data/brainstem.db
+```
+
+### Run retrieval benchmark
+
+```bash
+python scripts/benchmark_recall.py --backend inmemory --k 5
+python scripts/benchmark_recall.py --backend sqlite --sqlite-path .data/benchmark.db --k 5
+```
+
 ## Architecture snapshot
 
 ```text
@@ -121,7 +161,7 @@ This project follows an issue-first flow:
 ## Planned roadmap
 
 - v0.1: in-memory service + API contracts
-- v0.2: PostgreSQL + pgvector + migrations
+- v0.2: PostgreSQL + pgvector backend
 - v0.3: retrieval eval harness and metrics dashboards
 - v0.4: async reflection jobs and trainable reranker
 

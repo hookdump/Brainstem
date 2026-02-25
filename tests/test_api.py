@@ -4,10 +4,15 @@ import httpx
 import pytest
 
 from brainstem.api import create_app
+from brainstem.auth import AuthManager, AuthMode
+from brainstem.store import InMemoryRepository
 
 
 def _client() -> httpx.AsyncClient:
-    app = create_app()
+    app = create_app(
+        repository=InMemoryRepository(),
+        auth_manager=AuthManager(mode=AuthMode.DISABLED),
+    )
     transport = httpx.ASGITransport(app=app)
     return httpx.AsyncClient(transport=transport, base_url="http://test")
 
@@ -81,7 +86,9 @@ async def test_memory_lifecycle() -> None:
         assert len(recall_payload["items"]) >= 1
         assert recall_payload["items"][0]["memory_id"] == memory_id
 
-        inspect_response = await client.get(f"/v0/memory/{memory_id}?tenant_id=t_demo")
+        inspect_response = await client.get(
+            f"/v0/memory/{memory_id}?tenant_id=t_demo&agent_id=a_writer&scope=team"
+        )
         assert inspect_response.status_code == 200
         assert inspect_response.json()["memory_id"] == memory_id
 
@@ -93,7 +100,9 @@ async def test_memory_lifecycle() -> None:
         assert delete_response.status_code == 200
         assert delete_response.json()["deleted"] is True
 
-        inspect_after_delete = await client.get(f"/v0/memory/{memory_id}?tenant_id=t_demo")
+        inspect_after_delete = await client.get(
+            f"/v0/memory/{memory_id}?tenant_id=t_demo&agent_id=a_writer&scope=team"
+        )
         assert inspect_after_delete.status_code == 404
 
 
