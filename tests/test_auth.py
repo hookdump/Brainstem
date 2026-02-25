@@ -182,3 +182,20 @@ async def test_cleanup_requires_admin() -> None:
         )
         assert admin_cleanup.status_code == 200
         assert admin_cleanup.json()["status"] == "queued"
+
+
+@pytest.mark.anyio
+async def test_dead_letter_endpoint_requires_admin() -> None:
+    async with _auth_client(_manager()) as client:
+        writer = await client.get(
+            "/v0/jobs/dead_letters?tenant_id=t_auth&agent_id=a_writer",
+            headers={"x-brainstem-api-key": "writer-key"},
+        )
+        assert writer.status_code == 403
+
+        admin = await client.get(
+            "/v0/jobs/dead_letters?tenant_id=t_auth&agent_id=a_admin",
+            headers={"x-brainstem-api-key": "admin-key"},
+        )
+        assert admin.status_code == 200
+        assert "items" in admin.json()

@@ -25,8 +25,9 @@ Status date: February 25, 2026
 - [x] Add MCP-native server transport (in addition to REST mirror). (`#7`, baseline)
 - [x] Add async worker queue for reflection/train jobs. (`#4`, in-process baseline)
 - [x] Add retention cleanup worker for expired memory items. (`#8`, async baseline)
-- [ ] Add Docker deployment and local compose stack. (`#18`)
-- [ ] Upgrade async job queue to distributed workers with retries and DLQ. (`#17`)
+- [x] Add Docker deployment and local compose stack. (`#18`)
+- [x] Add retry policy and dead-letter tracking for async jobs. (`#17`, in-process baseline)
+- [ ] Upgrade async job queue to distributed workers with persistent retries and DLQ.
 - [ ] Harden MCP transport with auth/session security and integration fixtures. (`#19`)
 - [ ] Add CI job for Postgres integration test execution. (`#20`)
 - [ ] Add first-party CLI for admin and ops workflows. (`#21`)
@@ -56,3 +57,5 @@ Status date: February 25, 2026
 - [x] Added retention cleanup job flow with purge counts and tests.
 - [x] Added MCP tool-service baseline and MCP server entrypoint.
 - [x] Added pgvector-assisted Postgres recall baseline and optional integration tests.
+- [x] Added Docker/local compose deployment path with smoke tooling.
+- [x] Added async retry attempts and dead-letter inspection endpoint.

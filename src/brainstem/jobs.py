@@ -40,6 +40,8 @@ class JobRecord:
     payload: dict[str, Any] = field(default_factory=dict)
     result: dict[str, Any] | None = None
     error: str | None = None
+    attempts: int = 0
+    max_attempts: int = 1
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -53,16 +55,20 @@ class JobRecord:
             "finished_at": self.finished_at.isoformat() if self.finished_at else None,
             "result": self.result,
             "error": self.error,
+            "attempts": self.attempts,
+            "max_attempts": self.max_attempts,
         }
 
 
 class JobManager:
-    def __init__(self, repository: MemoryRepository) -> None:
+    def __init__(self, repository: MemoryRepository, default_max_attempts: int = 3) -> None:
         self._repository = repository
+        self._default_max_attempts = max(1, default_max_attempts)
         self._lock = RLock()
         self._stop_event = Event()
         self._queue: Queue[str] = Queue()
         self._jobs: dict[str, JobRecord] = {}
+        self._dead_letters: list[str] = []
         self._worker = Thread(target=self._run, daemon=True)
         self._worker.start()
 
@@ -106,6 +112,7 @@ class JobManager:
         tenant_id: str,
         agent_id: str,
         payload: dict[str, Any],
+        max_attempts: int | None = None,
     ) -> JobRecord:
         job = JobRecord(
             job_id=f"job_{uuid4().hex[:10]}",
@@ -115,6 +122,9 @@ class JobManager:
             status=JobStatus.QUEUED,
             created_at=datetime.now(UTC),
             payload=payload,
+            max_attempts=(
+                self._default_max_attempts if max_attempts is None else max(1, max_attempts)
+            ),
         )
         with self._lock:
             self._jobs[job.job_id] = job
@@ -124,6 +134,16 @@ class JobManager:
     def get(self, job_id: str) -> JobRecord | None:
         with self._lock:
             return self._jobs.get(job_id)
+
+    def list_dead_letters(self, tenant_id: str, limit: int = 50) -> list[JobRecord]:
+        with self._lock:
+            records = [
+                self._jobs[job_id]
+                for job_id in self._dead_letters
+                if job_id in self._jobs and self._jobs[job_id].tenant_id == tenant_id
+            ]
+        records.sort(key=lambda record: record.finished_at or record.created_at, reverse=True)
+        return records[: max(1, limit)]
 
     def close(self) -> None:
         self._stop_event.set()
@@ -145,6 +165,7 @@ class JobManager:
                 return
             job.status = JobStatus.RUNNING
             job.started_at = datetime.now(UTC)
+            job.attempts += 1
 
         try:
             result = self._execute_job(job)
@@ -154,9 +175,14 @@ class JobManager:
                 job.result = result
         except Exception as exc:  # pragma: no cover - defensive guard
             with self._lock:
-                job.status = JobStatus.FAILED
-                job.finished_at = datetime.now(UTC)
                 job.error = str(exc)
+                if job.attempts < job.max_attempts:
+                    job.status = JobStatus.QUEUED
+                    self._queue.put(job.job_id)
+                else:
+                    job.status = JobStatus.FAILED
+                    job.finished_at = datetime.now(UTC)
+                    self._dead_letters.append(job.job_id)
 
     def _execute_job(self, job: JobRecord) -> dict[str, Any]:
         if job.kind is JobKind.REFLECT:
