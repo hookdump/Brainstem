@@ -25,9 +25,11 @@ Status date: February 25, 2026
 - [x] Add MCP-native server transport (in addition to REST mirror). (`#7`, baseline)
 - [x] Add async worker queue for reflection/train jobs. (`#4`, in-process baseline)
 - [x] Add retention cleanup worker for expired memory items. (`#8`, async baseline)
-- [ ] Upgrade async job queue to distributed workers with retries and DLQ.
-- [ ] Harden MCP transport with auth/session security and integration fixtures.
-- [ ] Add CI job for Postgres integration test execution.
+- [ ] Add Docker deployment and local compose stack. (`#18`)
+- [ ] Upgrade async job queue to distributed workers with retries and DLQ. (`#17`)
+- [ ] Harden MCP transport with auth/session security and integration fixtures. (`#19`)
+- [ ] Add CI job for Postgres integration test execution. (`#20`)
+- [ ] Add first-party CLI for admin and ops workflows. (`#21`)
 - [ ] Add canary model registry for reranker/salience models.
 - [ ] Add optional graph projection for relation-aware retrieval.
 - [ ] Publish reproducible benchmark suite and leaderboard examples.
