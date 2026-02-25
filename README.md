@@ -111,6 +111,14 @@ brainstem leaderboard --manifest benchmarks/suite_manifest.json --output-dir rep
 brainstem health --url http://localhost:8080/healthz
 ```
 
+### 7) Demo showcase
+
+Run the sample project that writes and recalls shared context:
+
+```bash
+python demo/rest_context_showcase/run_demo.py
+```
+
 ## Configuration
 
 Brainstem reads runtime config from environment variables:
@@ -513,8 +521,10 @@ An alternative token envelope is also accepted:
 
 ## Repository docs
 
-- [BRAIN_ARCHITECTURE.md](./BRAIN_ARCHITECTURE.md)
-- [BRAIN_V0_TECH_SPEC.md](./BRAIN_V0_TECH_SPEC.md)
+- [Planning/README.md](./Planning/README.md)
+- [Planning/BRAIN_ARCHITECTURE.md](./Planning/BRAIN_ARCHITECTURE.md)
+- [Planning/BRAIN_V0_TECH_SPEC.md](./Planning/BRAIN_V0_TECH_SPEC.md)
+- [demo/README.md](./demo/README.md)
 - [TODO.md](./TODO.md)
 - [CONTRIBUTING.md](./CONTRIBUTING.md)
 
