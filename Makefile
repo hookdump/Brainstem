@@ -1,4 +1,4 @@
-.PHONY: install lint test run-api run-mcp docker-up docker-down docker-logs docker-smoke benchmark report
+.PHONY: install lint test run-api run-worker run-mcp docker-up docker-down docker-logs docker-smoke benchmark report
 
 install:
 	python3 -m venv .venv
@@ -12,6 +12,9 @@ test:
 
 run-api:
 	.venv/bin/brainstem serve-api
+
+run-worker:
+	PYTHONPATH=src .venv/bin/python scripts/job_worker.py
 
 run-mcp:
 	PYTHONPATH=src .venv/bin/python scripts/mcp_server.py

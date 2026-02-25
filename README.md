@@ -89,6 +89,8 @@ docker compose down
 make install
 make lint
 make test
+make run-api
+make run-worker
 make docker-up
 make docker-smoke
 make docker-down
@@ -129,6 +131,14 @@ Brainstem reads runtime config from environment variables:
 - `BRAINSTEM_MCP_TOKENS`:
   - required when `BRAINSTEM_MCP_AUTH_MODE=token`
   - JSON object mapping MCP tokens to `{tenant_id, agent_id, role}`
+- `BRAINSTEM_JOB_BACKEND`:
+  - `inprocess` (default)
+  - `sqlite` (shared durable queue for multi-process workers)
+- `BRAINSTEM_JOB_SQLITE_PATH`:
+  - queue database path, default `.data/jobs.db`
+- `BRAINSTEM_JOB_WORKER_ENABLED`:
+  - `true` (default) runs embedded worker in API process
+  - `false` enqueues only; use external worker process
 
 Example:
 
@@ -163,6 +173,31 @@ Optional Postgres integration test run:
 ```bash
 export BRAINSTEM_TEST_POSTGRES_DSN="postgresql://postgres:postgres@localhost:5432/brainstem"
 pytest tests/test_postgres_integration.py -q
+```
+
+### Distributed async worker mode (shared SQLite queue)
+
+Run API in enqueue-only mode:
+
+```bash
+export BRAINSTEM_JOB_BACKEND=sqlite
+export BRAINSTEM_JOB_SQLITE_PATH=.data/jobs.db
+export BRAINSTEM_JOB_WORKER_ENABLED=false
+brainstem serve-api
+```
+
+Run worker in another terminal:
+
+```bash
+export BRAINSTEM_JOB_BACKEND=sqlite
+export BRAINSTEM_JOB_SQLITE_PATH=.data/jobs.db
+python scripts/job_worker.py
+```
+
+Single-shot worker run (useful for cron/k8s jobs):
+
+```bash
+python scripts/job_worker.py --once
 ```
 
 ## Endpoint reference

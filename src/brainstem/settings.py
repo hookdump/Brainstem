@@ -13,6 +13,21 @@ class Settings:
     postgres_dsn: str | None
     auth_mode: str
     api_keys_json: str | None
+    job_backend: str
+    job_sqlite_path: str
+    job_worker_enabled: bool
+
+
+def _env_bool(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    normalized = raw.strip().lower()
+    if normalized in {"1", "true", "yes", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "off"}:
+        return False
+    raise ValueError(f"{name} must be a boolean-like value")
 
 
 def load_settings() -> Settings:
@@ -22,4 +37,7 @@ def load_settings() -> Settings:
         postgres_dsn=os.getenv("BRAINSTEM_POSTGRES_DSN"),
         auth_mode=os.getenv("BRAINSTEM_AUTH_MODE", "disabled").lower(),
         api_keys_json=os.getenv("BRAINSTEM_API_KEYS"),
+        job_backend=os.getenv("BRAINSTEM_JOB_BACKEND", "inprocess").lower(),
+        job_sqlite_path=os.getenv("BRAINSTEM_JOB_SQLITE_PATH", ".data/jobs.db"),
+        job_worker_enabled=_env_bool("BRAINSTEM_JOB_WORKER_ENABLED", True),
     )

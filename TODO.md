@@ -27,7 +27,7 @@ Status date: February 25, 2026
 - [x] Add retention cleanup worker for expired memory items. (`#8`, async baseline)
 - [x] Add Docker deployment and local compose stack. (`#18`)
 - [x] Add retry policy and dead-letter tracking for async jobs. (`#17`, in-process baseline)
-- [ ] Upgrade async job queue to distributed workers with persistent retries and DLQ.
+- [x] Upgrade async job queue to distributed workers with persistent retries and DLQ. (`#27`)
 - [x] Harden MCP transport with auth/session security and integration fixtures. (`#19`)
 - [x] Add CI job for Postgres integration test execution. (`#20`)
 - [x] Add first-party CLI for admin and ops workflows. (`#21`)
@@ -62,3 +62,4 @@ Status date: February 25, 2026
 - [x] Added dedicated CI job for Postgres integration tests.
 - [x] Added first-party `brainstem` CLI plus backward-compatible script wrappers.
 - [x] Hardened MCP auth/session defaults with token enforcement and deny/allow tests.
+- [x] Added SQLite-backed shared queue mode for distributed async workers and durable DLQ.
