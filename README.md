@@ -521,12 +521,13 @@ An alternative token envelope is also accepted:
 
 ## Repository docs
 
-- [Planning/README.md](./Planning/README.md)
-- [Planning/BRAIN_ARCHITECTURE.md](./Planning/BRAIN_ARCHITECTURE.md)
-- [Planning/BRAIN_V0_TECH_SPEC.md](./Planning/BRAIN_V0_TECH_SPEC.md)
+- [planning/README.md](./planning/README.md)
+- [planning/BRAIN_ARCHITECTURE.md](./planning/BRAIN_ARCHITECTURE.md)
+- [planning/BRAIN_V0_TECH_SPEC.md](./planning/BRAIN_V0_TECH_SPEC.md)
 - [demo/README.md](./demo/README.md)
 - [TODO.md](./TODO.md)
 - [CONTRIBUTING.md](./CONTRIBUTING.md)
+- [MAINTAINERS.md](./MAINTAINERS.md)
 
 ## Workflow
 
@@ -547,4 +548,4 @@ This repo is managed issue-first:
 
 ## License
 
-TBD.
+MIT. See [LICENSE](./LICENSE).

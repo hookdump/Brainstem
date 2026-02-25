@@ -7,7 +7,13 @@ name = "brainstem"
 version = "0.1.0"
 description = "Brainstem shared memory coprocessor for AI agents."
 readme = "README.md"
+license = { text = "MIT" }
 requires-python = ">=3.11"
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+]
 dependencies = [
   "fastapi>=0.115.0,<1.0.0",
   "pydantic>=2.8.0,<3.0.0",

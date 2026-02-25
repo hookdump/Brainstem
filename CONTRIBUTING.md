@@ -42,6 +42,7 @@ Use clear imperative commit messages:
 - Include tests for behavior changes.
 - Keep PRs focused and reviewable.
 - Update docs when APIs or behavior change.
+- Require maintainer approval before merge.
 
 ## Review bar
 
@@ -50,3 +51,10 @@ A PR is ready when:
 - CI is green.
 - Core behavior is covered by tests.
 - No obvious tenant isolation or trust-level regressions.
+
+## Governance
+
+- Maintainer roster and ownership: `MAINTAINERS.md`.
+- Repository ownership defaults are enforced via `.github/CODEOWNERS`.
+- Security-sensitive changes (auth/session, tenancy boundaries, persistence)
+  require explicit maintainer signoff.

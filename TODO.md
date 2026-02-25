@@ -13,7 +13,7 @@ Status date: February 25, 2026
 
 ## Next (High Priority)
 
-- [x] Implement DB schema + migrations baseline from `Planning/BRAIN_V0_TECH_SPEC.md` (SQLite v0).
+- [x] Implement DB schema + migrations baseline from `planning/BRAIN_V0_TECH_SPEC.md` (SQLite v0).
 - [x] Add idempotency persistence in storage layer (SQLite backend).
 - [x] Build baseline benchmark harness for Recall@K and token efficiency. (`#3`, local script)
 - [x] Add baseline conflict tracking for contradictory facts in recall responses.
@@ -40,7 +40,7 @@ Status date: February 25, 2026
 
 ## Hardening Backlog
 
-- [ ] Select and publish an OSS license + maintainer policy. (`#41`)
+- [x] Select and publish an OSS license + maintainer policy. (`#41`)
 - [ ] Add sustained load/performance regression suite (P95 latency + memory growth budgets). (`#42`)
 - [ ] Add backup/restore verification playbooks for SQLite/Postgres + model registry. (`#43`)
 - [ ] Add release automation (versioning/changelog/tags + PyPI publish workflow). (`#44`)
@@ -78,3 +78,4 @@ Status date: February 25, 2026
 - [x] Added optional graph projection + graph-assisted recall expansion across backends.
 - [x] Added persistent model registry backends and model audit history API.
 - [x] Added MCP stdio end-to-end integration harness with CI coverage.
+- [x] Published MIT license + maintainer governance files and ownership policy.
