@@ -19,7 +19,12 @@ from brainstem.graph import (
     SQLiteGraphStore,
 )
 from brainstem.jobs import JobManager
-from brainstem.model_registry import ModelRegistry
+from brainstem.model_registry import (
+    InMemoryModelRegistryStore,
+    ModelRegistry,
+    PostgresModelRegistryStore,
+    SQLiteModelRegistryStore,
+)
 from brainstem.models import (
     CleanupRequest,
     CleanupResponse,
@@ -27,6 +32,7 @@ from brainstem.models import (
     ForgetResponse,
     JobStatusResponse,
     ModelKind,
+    ModelRegistryHistoryResponse,
     ModelRegistryStateResponse,
     ModelSignalRequest,
     PromoteCanaryRequest,
@@ -106,6 +112,32 @@ def _create_graph_store(
     raise ValueError(f"unsupported BRAINSTEM_STORE_BACKEND: {settings.store_backend}")
 
 
+def _create_model_registry(settings: Settings) -> ModelRegistry:
+    if settings.model_registry_backend == "inmemory":
+        return ModelRegistry(
+            store=InMemoryModelRegistryStore(),
+            signal_window=settings.model_registry_signal_window,
+        )
+    if settings.model_registry_backend == "sqlite":
+        return ModelRegistry(
+            store=SQLiteModelRegistryStore(settings.model_registry_sqlite_path),
+            signal_window=settings.model_registry_signal_window,
+        )
+    if settings.model_registry_backend == "postgres":
+        if not settings.postgres_dsn:
+            raise ValueError(
+                "BRAINSTEM_POSTGRES_DSN is required when "
+                "BRAINSTEM_MODEL_REGISTRY_BACKEND=postgres"
+            )
+        return ModelRegistry(
+            store=PostgresModelRegistryStore(settings.postgres_dsn),
+            signal_window=settings.model_registry_signal_window,
+        )
+    raise ValueError(
+        f"unsupported BRAINSTEM_MODEL_REGISTRY_BACKEND: {settings.model_registry_backend}"
+    )
+
+
 def create_app(
     repository: MemoryRepository | None = None,
     settings: Settings | None = None,
@@ -115,7 +147,11 @@ def create_app(
     runtime_settings = settings if settings is not None else load_settings()
     repo = repository if repository is not None else _create_repository(runtime_settings)
     auth = auth_manager if auth_manager is not None else _create_auth_manager(runtime_settings)
-    registry = model_registry if model_registry is not None else ModelRegistry()
+    registry = (
+        model_registry
+        if model_registry is not None
+        else _create_model_registry(runtime_settings)
+    )
     jobs = _create_job_manager(runtime_settings, repo, registry)
     graph_store = _create_graph_store(runtime_settings)
     graph_repository = (
@@ -135,6 +171,7 @@ def create_app(
             yield
         finally:
             jobs.close()
+            registry.close()
             if graph_store is not None:
                 graph_store.close()
 
@@ -433,6 +470,23 @@ def create_app(
         state = _registry_or_400(registry.get_state, model_kind.value)
         return ModelRegistryStateResponse.model_validate(state)
 
+    @app.get("/v0/models/{model_kind}/history", response_model=ModelRegistryHistoryResponse)
+    async def model_history(
+        model_kind: ModelKind,
+        tenant_id: str,
+        agent_id: str,
+        auth_context: Annotated[AuthContext, Depends(get_auth_context)],
+        limit: int = Query(default=100, ge=1, le=500),
+    ) -> ModelRegistryHistoryResponse:
+        auth.authorize(
+            context=auth_context,
+            tenant_id=tenant_id,
+            agent_id=agent_id,
+            minimum_role=AgentRole.ADMIN,
+        )
+        history = _registry_or_400(registry.history, model_kind.value, limit)
+        return ModelRegistryHistoryResponse.model_validate(history)
+
     @app.post(
         "/v0/models/{model_kind}/canary/register",
         response_model=ModelRegistryStateResponse,
@@ -455,6 +509,7 @@ def create_app(
             payload.rollout_percent,
             payload.tenant_allowlist,
             payload.metadata,
+            payload.agent_id,
         )
         return ModelRegistryStateResponse.model_validate(state)
 
@@ -473,7 +528,7 @@ def create_app(
             agent_id=payload.agent_id,
             minimum_role=AgentRole.ADMIN,
         )
-        state = _registry_or_400(registry.promote_canary, model_kind.value)
+        state = _registry_or_400(registry.promote_canary, model_kind.value, payload.agent_id)
         return ModelRegistryStateResponse.model_validate(state)
 
     @app.post(
@@ -491,7 +546,7 @@ def create_app(
             agent_id=payload.agent_id,
             minimum_role=AgentRole.ADMIN,
         )
-        state = _registry_or_400(registry.rollback_canary, model_kind.value)
+        state = _registry_or_400(registry.rollback_canary, model_kind.value, payload.agent_id)
         return ModelRegistryStateResponse.model_validate(state)
 
     @app.post("/v0/models/{model_kind}/signals", response_model=ModelRegistryStateResponse)
@@ -513,6 +568,7 @@ def create_app(
             payload.metric,
             payload.value,
             payload.source,
+            payload.agent_id,
         )
         return ModelRegistryStateResponse.model_validate(state)
 
@@ -524,6 +580,7 @@ def create_app(
             "store_backend": runtime_settings.store_backend,
             "auth_mode": runtime_settings.auth_mode,
             "graph_enabled": str(runtime_settings.graph_enabled).lower(),
+            "model_registry_backend": runtime_settings.model_registry_backend,
             "generated_at": datetime.now(UTC).isoformat(),
         }
 
@@ -538,6 +595,7 @@ def create_app(
             "store_backend": runtime_settings.store_backend,
             "auth_mode": runtime_settings.auth_mode,
             "graph_enabled": runtime_settings.graph_enabled,
+            "model_registry_backend": runtime_settings.model_registry_backend,
             "snapshot": metrics.snapshot(),
         }
 

@@ -56,3 +56,38 @@ CREATE TABLE IF NOT EXISTS graph_edges (
 
 CREATE INDEX IF NOT EXISTS idx_graph_edges_tenant_src
     ON graph_edges (tenant_id, src_memory_id);
+
+CREATE TABLE IF NOT EXISTS model_registry_state (
+    model_kind TEXT PRIMARY KEY,
+    active_version TEXT NOT NULL,
+    canary_version TEXT,
+    rollout_percent INTEGER NOT NULL,
+    tenant_allowlist_json JSONB NOT NULL,
+    metadata_json JSONB NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS model_registry_signal (
+    id BIGSERIAL PRIMARY KEY,
+    model_kind TEXT NOT NULL,
+    version TEXT NOT NULL,
+    metric TEXT NOT NULL,
+    value DOUBLE PRECISION NOT NULL,
+    source TEXT,
+    created_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_model_registry_signal_kind_created
+    ON model_registry_signal (model_kind, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS model_registry_event (
+    id BIGSERIAL PRIMARY KEY,
+    model_kind TEXT NOT NULL,
+    event_kind TEXT NOT NULL,
+    actor_agent_id TEXT,
+    payload_json JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_model_registry_event_kind_created
+    ON model_registry_event (model_kind, created_at DESC);

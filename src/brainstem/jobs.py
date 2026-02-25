@@ -283,6 +283,7 @@ class JobManager:
                     model_kind=model_kind,
                     version=canary_version,
                     rollout_percent=10,
+                    actor_agent_id=job.agent_id,
                 )
             return {
                 "notes": (

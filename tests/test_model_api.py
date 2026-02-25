@@ -89,6 +89,12 @@ async def test_model_registry_endpoints_and_recall_routing() -> None:
         assert state.status_code == 200
         assert state.json()["canary_version"] == "reranker-canary-v2"
 
+        history = await client.get("/v0/models/reranker/history?tenant_id=t_demo&agent_id=a_admin")
+        assert history.status_code == 200
+        kinds = [item["event_kind"] for item in history.json()["items"]]
+        assert "register_canary" in kinds
+        assert "record_signal" in kinds
+
         promote = await client.post(
             "/v0/models/reranker/canary/promote",
             json={"tenant_id": "t_demo", "agent_id": "a_admin"},
@@ -124,3 +130,9 @@ async def test_model_registry_admin_only_routes() -> None:
             },
         )
         assert allowed.status_code == 200
+
+        history_denied = await client.get(
+            "/v0/models/reranker/history?tenant_id=t_demo&agent_id=a_writer",
+            headers={"x-brainstem-api-key": "writer-key"},
+        )
+        assert history_denied.status_code == 403
