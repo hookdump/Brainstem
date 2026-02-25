@@ -18,6 +18,9 @@ It lets multiple agents store, retrieve, and reuse context across sessions with:
   - `inmemory` (fast local dev)
   - `sqlite` (persistent local baseline)
   - `postgres` (pgvector-ready scaffold)
+- Postgres vector support:
+  - deterministic hashed embeddings persisted to pgvector
+  - vector-assisted candidate ordering for recall
 - Role model:
   - `reader`, `writer`, `admin`
 - Async job pipeline:
@@ -102,6 +105,13 @@ pip install -e ".[dev,postgres]"
 export BRAINSTEM_STORE_BACKEND=postgres
 export BRAINSTEM_POSTGRES_DSN="postgresql://postgres:postgres@localhost:5432/brainstem"
 brainstem-api
+```
+
+Optional Postgres integration test run:
+
+```bash
+export BRAINSTEM_TEST_POSTGRES_DSN="postgresql://postgres:postgres@localhost:5432/brainstem"
+pytest tests/test_postgres_integration.py -q
 ```
 
 ## Endpoint reference

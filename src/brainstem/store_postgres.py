@@ -24,6 +24,7 @@ from brainstem.store import (
     _pack_recall,
     _to_details,
 )
+from brainstem.vector import hashed_embedding, vector_literal
 
 
 class PostgresRepository:
@@ -142,8 +143,9 @@ class PostgresRepository:
                     """
                     INSERT INTO memory_items (
                         memory_id, tenant_id, agent_id, type, scope, text,
-                        trust_level, confidence, salience, source_ref, created_at, expires_at
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        trust_level, confidence, salience, source_ref,
+                        created_at, expires_at, embedding
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s::vector)
                     """,
                     (
                         memory_id,
@@ -166,6 +168,7 @@ class PostgresRepository:
                         item.source_ref,
                         now,
                         item.expires_at,
+                        vector_literal(hashed_embedding(item.text)),
                     ),
                 )
 
@@ -241,18 +244,29 @@ class PostgresRepository:
 
     def recall(self, payload: RecallRequest) -> RecallResponse:
         with self._lock, self._connection.cursor() as cursor:
-            query = """
-                SELECT * FROM memory_items
-                WHERE tenant_id = %s AND tombstoned = FALSE
-            """
+            where_clauses = ["tenant_id = %s", "tombstoned = FALSE"]
             params: list[Any] = [payload.tenant_id]
             if payload.filters.types:
-                placeholders = ", ".join(["%s"] * len(payload.filters.types))
-                query = f"{query} AND type IN ({placeholders})"
-                params.extend(memory_type.value for memory_type in payload.filters.types)
+                where_clauses.append("type = ANY(%s)")
+                params.append([memory_type.value for memory_type in payload.filters.types])
 
-            cursor.execute(query, params)
-            rows = cursor.fetchall()
+            where = " AND ".join(where_clauses)
+            rows: list[dict[str, Any]]
+            vector_query = (
+                f"SELECT *, (embedding <=> %s::vector) AS vector_distance "
+                f"FROM memory_items WHERE {where} "
+                f"ORDER BY vector_distance ASC NULLS LAST "
+                f"LIMIT 512"
+            )
+            try:
+                query_vector = vector_literal(hashed_embedding(payload.query))
+                cursor.execute(vector_query, [query_vector, *params])
+                rows = cursor.fetchall()
+            except Exception:
+                fallback_query = f"SELECT * FROM memory_items WHERE {where}"
+                cursor.execute(fallback_query, params)
+                rows = cursor.fetchall()
+
             candidates: list[MemoryRecord] = []
             for row in rows:
                 record = self._row_to_record(row)

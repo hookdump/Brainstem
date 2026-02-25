@@ -7,7 +7,7 @@ Status date: February 25, 2026
 - [x] Bootstrap repository docs (`README`, architecture, v0 spec).
 - [x] Implement v0 API skeleton with memory endpoints.
 - [x] Add initial tests and CI baseline.
-- [ ] Replace in-memory store with PostgreSQL + pgvector backend. (`#1`, scaffold added)
+- [x] Replace in-memory store with PostgreSQL + pgvector backend. (`#1`, baseline complete)
 - [x] Add authn/authz middleware for tenant and scope enforcement. (`#2`)
 - [x] Add retrieval metrics and tracing instrumentation. (`#5`)
 
@@ -27,6 +27,7 @@ Status date: February 25, 2026
 - [x] Add retention cleanup worker for expired memory items. (`#8`, async baseline)
 - [ ] Upgrade async job queue to distributed workers with retries and DLQ.
 - [ ] Harden MCP transport with auth/session security and integration fixtures.
+- [ ] Add CI job for Postgres integration test execution.
 - [ ] Add canary model registry for reranker/salience models.
 - [ ] Add optional graph projection for relation-aware retrieval.
 - [ ] Publish reproducible benchmark suite and leaderboard examples.
@@ -52,3 +53,4 @@ Status date: February 25, 2026
 - [x] Added recall stage timing metrics and structured trace logging.
 - [x] Added retention cleanup job flow with purge counts and tests.
 - [x] Added MCP tool-service baseline and MCP server entrypoint.
+- [x] Added pgvector-assisted Postgres recall baseline and optional integration tests.
