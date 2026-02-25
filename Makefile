@@ -1,4 +1,4 @@
-.PHONY: install lint test run-api run-worker run-mcp docker-up docker-down docker-logs docker-smoke benchmark report leaderboard perf-regression backup-sqlite restore-sqlite verify-restore-sqlite
+.PHONY: install lint test run-api run-worker run-mcp docker-up docker-down docker-logs docker-smoke benchmark report leaderboard perf-regression backup-sqlite restore-sqlite verify-restore-sqlite release-prep
 
 install:
 	python3 -m venv .venv
@@ -51,3 +51,7 @@ restore-sqlite:
 
 verify-restore-sqlite:
 	PYTHONPATH=src .venv/bin/python scripts/verify_sqlite_restore.py --work-dir .data/restore-verify --output-json .data/restore-verify/verification.json
+
+release-prep:
+	@if [ -z "$(VERSION)" ]; then echo "Usage: make release-prep VERSION=0.2.0"; exit 1; fi
+	PYTHONPATH=src .venv/bin/python scripts/prepare_release.py --version $(VERSION)
