@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from threading import RLock
 from typing import Any
 from uuid import uuid4
@@ -262,6 +262,23 @@ class PostgresRepository:
                     continue
                 candidates.append(record)
             return _pack_recall(payload, candidates)
+
+    def purge_expired(self, tenant_id: str, grace_hours: int = 0) -> int:
+        cutoff = datetime.now(UTC) - timedelta(hours=grace_hours)
+        with self._lock, self._connection.cursor() as cursor:
+            cursor.execute(
+                """
+                UPDATE memory_items
+                SET tombstoned = TRUE
+                WHERE tenant_id = %s
+                  AND tombstoned = FALSE
+                  AND expires_at IS NOT NULL
+                  AND expires_at <= %s
+                """,
+                (tenant_id, cutoff),
+            )
+            rowcount = cursor.rowcount
+        return int(rowcount if rowcount is not None else 0)
 
     def close(self) -> None:
         self._connection.close()

@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 import sqlite3
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from threading import RLock
 from typing import Protocol
@@ -39,6 +39,8 @@ class MemoryRepository(Protocol):
     def forget(self, tenant_id: str, agent_id: str, memory_id: str) -> ForgetResponse: ...
 
     def recall(self, payload: RecallRequest) -> RecallResponse: ...
+
+    def purge_expired(self, tenant_id: str, grace_hours: int = 0) -> int: ...
 
 
 @dataclass(slots=True)
@@ -278,6 +280,20 @@ class InMemoryRepository:
             ]
             return _pack_recall(payload, candidates)
 
+    def purge_expired(self, tenant_id: str, grace_hours: int = 0) -> int:
+        cutoff = datetime.now(UTC) - timedelta(hours=grace_hours)
+        purged = 0
+        with self._lock:
+            for record in self._records.values():
+                if record.tenant_id != tenant_id:
+                    continue
+                if record.tombstoned or record.expires_at is None:
+                    continue
+                if record.expires_at <= cutoff:
+                    record.tombstoned = True
+                    purged += 1
+        return purged
+
 
 class SQLiteRepository:
     def __init__(self, sqlite_path: str) -> None:
@@ -493,6 +509,22 @@ class SQLiteRepository:
                 candidates.append(record)
 
             return _pack_recall(payload, candidates)
+
+    def purge_expired(self, tenant_id: str, grace_hours: int = 0) -> int:
+        cutoff = (datetime.now(UTC) - timedelta(hours=grace_hours)).isoformat()
+        with self._lock, self._connection:
+            cursor = self._connection.execute(
+                """
+                UPDATE memory_items
+                SET tombstoned = 1
+                WHERE tenant_id = ?
+                  AND tombstoned = 0
+                  AND expires_at IS NOT NULL
+                  AND expires_at <= ?
+                """,
+                (tenant_id, cutoff),
+            )
+            return int(cursor.rowcount)
 
     def close(self) -> None:
         self._connection.close()
