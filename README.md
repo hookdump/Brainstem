@@ -17,7 +17,7 @@ It lets multiple agents store, retrieve, and reuse context across sessions with:
 - Storage backends:
   - `inmemory` (fast local dev)
   - `sqlite` (persistent local baseline)
-  - `postgres` (pgvector-ready scaffold)
+  - `postgres` (pgvector-enabled baseline)
 - Postgres vector support:
   - deterministic hashed embeddings persisted to pgvector
   - vector-assisted candidate ordering for recall
@@ -39,6 +39,8 @@ It lets multiple agents store, retrieve, and reuse context across sessions with:
   - migration script for SQLite
   - retrieval benchmark harness (Recall@K, nDCG, token estimate)
   - MCP tool-service adapter and server entrypoint
+  - Docker + docker compose local stack
+  - Makefile for common workflows
   - CI (`ruff` + `pytest`)
 
 ## Quickstart
@@ -64,6 +66,31 @@ Service URL: `http://localhost:8080`
 ```bash
 ruff check .
 pytest
+```
+
+### 4) Containerized quickstart (Docker + Postgres + pgvector)
+
+```bash
+cp .env.example .env
+docker compose up -d --build
+bash scripts/smoke_docker_stack.sh
+```
+
+Stop stack:
+
+```bash
+docker compose down
+```
+
+### 5) Makefile shortcuts
+
+```bash
+make install
+make lint
+make test
+make docker-up
+make docker-smoke
+make docker-down
 ```
 
 ## Configuration
