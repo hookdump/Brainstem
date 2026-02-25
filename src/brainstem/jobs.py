@@ -13,6 +13,7 @@ from threading import Event, RLock, Thread
 from typing import Any
 from uuid import uuid4
 
+from brainstem.model_registry import ModelRegistry
 from brainstem.models import RecallRequest, Scope
 from brainstem.store import MemoryRepository
 
@@ -71,11 +72,13 @@ class JobManager:
         sqlite_path: str | None = None,
         start_worker: bool = True,
         poll_interval_s: float = 0.2,
+        model_registry: ModelRegistry | None = None,
     ) -> None:
         self._repository = repository
         self._default_max_attempts = max(1, default_max_attempts)
         self._sqlite_path = sqlite_path
         self._poll_interval_s = max(0.05, poll_interval_s)
+        self._model_registry = model_registry
         self._lock = RLock()
         self._stop_event = Event()
         self._queue: Queue[str] = Queue()
@@ -242,6 +245,13 @@ class JobManager:
     def _execute_job(self, job: JobRecord) -> dict[str, Any]:
         if job.kind is JobKind.REFLECT:
             max_candidates = int(job.payload["max_candidates"])
+            model_version = None
+            model_route = None
+            if self._model_registry is not None:
+                model_version, model_route = self._model_registry.select_version(
+                    model_kind="reranker",
+                    tenant_id=job.tenant_id,
+                )
             recent = self._repository.recall(
                 RecallRequest.model_validate(
                     {
@@ -255,16 +265,31 @@ class JobManager:
             candidates = [
                 f"[candidate_fact] {item.text}" for item in recent.items[:max_candidates]
             ]
-            return {"candidate_facts": candidates}
+            return {
+                "candidate_facts": candidates,
+                "model_version": model_version,
+                "model_route": model_route,
+            }
 
         if job.kind is JobKind.TRAIN:
             model_kind = str(job.payload["model_kind"])
             lookback_days = int(job.payload["lookback_days"])
+            canary_version = (
+                f"{model_kind}-canary-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}-"
+                f"{uuid4().hex[:6]}"
+            )
+            if self._model_registry is not None:
+                self._model_registry.register_canary(
+                    model_kind=model_kind,
+                    version=canary_version,
+                    rollout_percent=10,
+                )
             return {
                 "notes": (
                     f"Simulated {model_kind} training for tenant {job.tenant_id} "
                     f"with {lookback_days} day lookback."
-                )
+                ),
+                "candidate_version": canary_version,
             }
 
         if job.kind is JobKind.CLEANUP:

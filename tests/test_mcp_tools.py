@@ -61,6 +61,8 @@ def test_mcp_tool_service_memory_flow() -> None:
     )
     assert len(recall["items"]) >= 1
     assert recall["items"][0]["memory_id"] == memory_id
+    assert recall["model_version"] is not None
+    assert recall["model_route"] is not None
 
     details = service.inspect(
         _with_token(

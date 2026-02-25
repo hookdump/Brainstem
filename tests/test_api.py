@@ -88,6 +88,8 @@ async def test_memory_lifecycle() -> None:
         recall_payload = recall_response.json()
         assert len(recall_payload["items"]) >= 1
         assert recall_payload["items"][0]["memory_id"] == memory_id
+        assert recall_payload["model_version"] is not None
+        assert recall_payload["model_route"] is not None
 
         inspect_response = await client.get(
             f"/v0/memory/{memory_id}?tenant_id=t_demo&agent_id=a_writer&scope=team"
