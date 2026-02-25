@@ -100,6 +100,7 @@ make perf-regression
 make backup-sqlite
 make restore-sqlite
 make verify-restore-sqlite
+make release-prep VERSION=0.2.0
 ```
 
 ### 6) First-party CLI commands
@@ -494,6 +495,26 @@ bash scripts/restore_postgres.sh --dsn "postgresql://postgres:postgres@localhost
 
 For full playbook, see `ops/BACKUP_RESTORE.md`.
 
+## Release automation
+
+Prepare local release artifacts:
+
+```bash
+make release-prep VERSION=0.2.0
+```
+
+This updates:
+
+- `pyproject.toml` version
+- `CHANGELOG.md` (prepends a generated entry from commit history)
+- `.release-notes.md` (used by release workflow)
+
+Publish a release from GitHub:
+
+1. Run workflow `Release` (manual dispatch) on `main`.
+2. Enter `version` (`MAJOR.MINOR.PATCH`).
+3. Optionally enable `publish_to_pypi`.
+
 ### When to enable graph mode
 
 Enable graph mode when memory entries share entities/terms and you want recall
@@ -516,6 +537,7 @@ python scripts/generate_benchmark_report.py --dataset benchmarks/retrieval_datas
 python scripts/generate_leaderboard.py --manifest benchmarks/suite_manifest.json
 python scripts/run_performance_regression.py --iterations 200 --seed-count 100
 python scripts/verify_sqlite_restore.py --work-dir .data/restore-verify
+python scripts/prepare_release.py --version 0.2.0
 ```
 
 Run MCP server transport:
@@ -569,6 +591,7 @@ An alternative token envelope is also accepted:
 - [CONTRIBUTING.md](./CONTRIBUTING.md)
 - [MAINTAINERS.md](./MAINTAINERS.md)
 - [ops/BACKUP_RESTORE.md](./ops/BACKUP_RESTORE.md)
+- [CHANGELOG.md](./CHANGELOG.md)
 
 ## Workflow
 
