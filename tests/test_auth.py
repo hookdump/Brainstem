@@ -150,3 +150,16 @@ async def test_train_requires_admin() -> None:
         )
         assert admin_train.status_code == 200
         assert admin_train.json()["status"] == "queued"
+        job_id = admin_train.json()["job_id"]
+
+        writer_job_view = await client.get(
+            f"/v0/jobs/{job_id}?tenant_id=t_auth&agent_id=a_writer",
+            headers={"x-brainstem-api-key": "writer-key"},
+        )
+        assert writer_job_view.status_code == 403
+
+        admin_job_view = await client.get(
+            f"/v0/jobs/{job_id}?tenant_id=t_auth&agent_id=a_admin",
+            headers={"x-brainstem-api-key": "admin-key"},
+        )
+        assert admin_job_view.status_code == 200

@@ -23,8 +23,9 @@ Status date: February 25, 2026
 ## Later
 
 - [ ] Add MCP-native server transport (in addition to REST mirror). (`#8`)
-- [ ] Add async worker queue for reflection/train jobs. (`#4`)
+- [x] Add async worker queue for reflection/train jobs. (`#4`, in-process baseline)
 - [ ] Add retention cleanup worker for expired memory items. (`#7`)
+- [ ] Upgrade async job queue to distributed workers with retries and DLQ.
 - [ ] Add canary model registry for reranker/salience models.
 - [ ] Add optional graph projection for relation-aware retrieval.
 - [ ] Publish reproducible benchmark suite and leaderboard examples.
@@ -46,3 +47,4 @@ Status date: February 25, 2026
 - [x] Added observability baseline (`/v0/metrics` counters + latency summaries) with tests.
 - [x] Added Postgres backend scaffold + pgvector migration baseline.
 - [x] Published benchmark dataset and report artifact (`reports/retrieval_benchmark.md`).
+- [x] Added async job baseline (`reflect`/`train`) with `/v0/jobs/{job_id}` polling.

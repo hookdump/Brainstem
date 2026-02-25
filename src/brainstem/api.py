@@ -4,15 +4,16 @@ from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 from time import perf_counter
 from typing import Annotated
-from uuid import uuid4
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from starlette.responses import Response
 
 from brainstem.auth import AgentRole, AuthContext, AuthManager
+from brainstem.jobs import JobManager
 from brainstem.models import (
     ForgetRequest,
     ForgetResponse,
+    JobStatusResponse,
     RecallRequest,
     RecallResponse,
     ReflectRequest,
@@ -55,6 +56,7 @@ def create_app(
     runtime_settings = settings if settings is not None else load_settings()
     repo = repository if repository is not None else _create_repository(runtime_settings)
     auth = auth_manager if auth_manager is not None else _create_auth_manager(runtime_settings)
+    jobs = JobManager(repo)
     metrics = MetricsStore()
 
     app = FastAPI(
@@ -192,21 +194,16 @@ def create_app(
             agent_id=payload.agent_id,
             minimum_role=AgentRole.WRITER,
         )
-        recent = repo.recall(
-            RecallRequest(
-                tenant_id=payload.tenant_id,
-                agent_id=payload.agent_id,
-                scope=Scope.GLOBAL,
-                query="constraints commitments unresolved tasks deadlines",
-            )
+        job = jobs.submit_reflect(
+            tenant_id=payload.tenant_id,
+            agent_id=payload.agent_id,
+            window_hours=payload.window_hours,
+            max_candidates=payload.max_candidates,
         )
-        candidates = [
-            f"[candidate_fact] {item.text}" for item in recent.items[: payload.max_candidates]
-        ]
         return ReflectResponse(
-            job_id=f"rfl_{uuid4().hex[:8]}",
-            status="completed",
-            candidate_facts=candidates,
+            job_id=job.job_id,
+            status="queued",
+            candidate_facts=[],
         )
 
     @app.post("/v0/memory/train", response_model=TrainResponse)
@@ -220,14 +217,37 @@ def create_app(
             agent_id=auth_context.agent_id,
             minimum_role=AgentRole.ADMIN,
         )
-        return TrainResponse(
-            job_id=f"trn_{uuid4().hex[:8]}",
-            status="queued",
-            notes=(
-                f"Queued {payload.model_kind} training for tenant {payload.tenant_id} "
-                f"using {payload.lookback_days} day lookback."
-            ),
+        job = jobs.submit_train(
+            tenant_id=payload.tenant_id,
+            agent_id=auth_context.agent_id,
+            model_kind=payload.model_kind,
+            lookback_days=payload.lookback_days,
         )
+        return TrainResponse(
+            job_id=job.job_id,
+            status="queued",
+            notes="Training job queued.",
+        )
+
+    @app.get("/v0/jobs/{job_id}", response_model=JobStatusResponse)
+    async def job_status(
+        job_id: str,
+        tenant_id: str,
+        agent_id: str,
+        auth_context: Annotated[AuthContext, Depends(get_auth_context)],
+    ) -> JobStatusResponse:
+        auth.authorize(
+            context=auth_context,
+            tenant_id=tenant_id,
+            agent_id=agent_id,
+            minimum_role=AgentRole.READER,
+        )
+        job = jobs.get(job_id)
+        if job is None or job.tenant_id != tenant_id:
+            raise HTTPException(status_code=404, detail="job_not_found")
+        if auth_context.role is not AgentRole.ADMIN and job.agent_id != agent_id:
+            raise HTTPException(status_code=403, detail="agent_mismatch")
+        return JobStatusResponse.model_validate(job.to_dict())
 
     @app.get("/v0/meta")
     async def meta() -> dict[str, str]:

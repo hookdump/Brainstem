@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from datetime import UTC, datetime, timedelta
 
 import httpx
@@ -133,7 +134,20 @@ async def test_reflect_and_train() -> None:
             json={"tenant_id": "t_demo", "agent_id": "a_ops", "window_hours": 24},
         )
         assert reflect.status_code == 200
-        assert reflect.json()["status"] == "completed"
+        reflect_job_id = reflect.json()["job_id"]
+        assert reflect.json()["status"] == "queued"
+        reflect_status = None
+        for _ in range(20):
+            reflect_status = await client.get(
+                f"/v0/jobs/{reflect_job_id}?tenant_id=t_demo&agent_id=a_ops"
+            )
+            assert reflect_status.status_code == 200
+            if reflect_status.json()["status"] == "completed":
+                break
+            await asyncio.sleep(0.05)
+        assert reflect_status is not None
+        assert reflect_status.json()["status"] == "completed"
+        assert "candidate_facts" in reflect_status.json()["result"]
 
         train = await client.post(
             "/v0/memory/train",
@@ -141,6 +155,18 @@ async def test_reflect_and_train() -> None:
         )
         assert train.status_code == 200
         assert train.json()["status"] == "queued"
+        train_job_id = train.json()["job_id"]
+        train_status = None
+        for _ in range(20):
+            train_status = await client.get(
+                f"/v0/jobs/{train_job_id}?tenant_id=t_demo&agent_id=a_ops"
+            )
+            assert train_status.status_code == 200
+            if train_status.json()["status"] == "completed":
+                break
+            await asyncio.sleep(0.05)
+        assert train_status is not None
+        assert train_status.json()["status"] == "completed"
 
 
 @pytest.mark.anyio
